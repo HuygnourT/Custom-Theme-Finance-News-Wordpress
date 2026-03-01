@@ -1,204 +1,68 @@
-<?php
-/**
- * Single Broker Template - Đánh giá broker chi tiết
- * 
- * WP tự động dùng file này cho post type 'broker'
- * (single-{post_type}.php)
- * 
- * @package FXTradingToday
- */
-
-get_header();
+<?php get_header(); if(have_posts()): the_post();
+$meta = fxt_get_broker_meta(get_the_ID());
+$aff = $meta['affiliate_link'] ?: get_theme_mod('fxt_default_affiliate_link','#');
+$prefix = get_theme_mod('fxt_broker_review_prefix', 'Review');
+$lbl_open = get_theme_mod('fxt_broker_open_account', 'Open Account');
 ?>
 
-<?php while (have_posts()): the_post();
-    $meta = fxt_get_broker_meta(get_the_ID());
-?>
-
-<article class="single-broker" id="broker-<?php the_ID(); ?>">
-
-    <!-- Broker Header -->
-    <div class="broker-hero">
-        <div class="container">
-            <?php fxt_breadcrumbs(); ?>
-
-            <div class="broker-hero-inner">
-                <!-- Logo + Tên -->
-                <div class="broker-hero-info">
-                    <?php if (has_post_thumbnail()): ?>
-                    <div class="broker-hero-logo">
-                        <?php the_post_thumbnail('fxt-broker-logo'); ?>
-                    </div>
-                    <?php endif; ?>
-                    <div>
-                        <h1 class="broker-hero-title">Đánh giá <?php the_title(); ?> <?php echo date('Y'); ?></h1>
-                        <p class="broker-hero-excerpt"><?php the_excerpt(); ?></p>
-                    </div>
-                </div>
-
-                <!-- Rating Box -->
-                <div class="broker-rating-box">
-                    <?php if ($meta['rating']): ?>
-                    <div class="rating-big">
-                        <span class="rating-number-big"><?php echo esc_html($meta['rating']); ?></span>
-                        <span class="rating-max">/10</span>
-                    </div>
-                    <?php echo fxt_star_rating($meta['rating']); ?>
-                    <?php endif; ?>
-
-                    <?php if ($meta['affiliate_link']): ?>
-                    <a href="<?php echo esc_url($meta['affiliate_link']); ?>"
-                       class="btn btn-primary btn-lg btn-block"
-                       target="_blank" rel="noopener nofollow">
-                        Mở tài khoản <?php the_title(); ?>
-                    </a>
-                    <?php endif; ?>
-                </div>
+<div class="broker-hero"><div class="container">
+    <?php fxt_breadcrumbs(); ?>
+    <div class="broker-hero-inner">
+        <div class="broker-hero-info">
+            <div class="broker-hero-logo"><?php if(has_post_thumbnail()): the_post_thumbnail('fxt-broker-logo'); else: echo '<span style="font-size:1.5rem;font-weight:800;color:var(--c-primary)">'.esc_html(mb_substr(get_the_title(),0,2)).'</span>'; endif; ?></div>
+            <div>
+                <h1 class="broker-hero-title"><?php echo esc_html($prefix); ?> <?php the_title(); ?> <?php echo date('Y'); ?></h1>
+                <?php if(has_excerpt()): ?><p class="broker-hero-excerpt"><?php echo get_the_excerpt(); ?></p><?php endif; ?>
             </div>
         </div>
-    </div>
-
-    <div class="container layout-with-sidebar">
-        <div class="content-area">
-
-            <!-- Thông tin nhanh -->
-            <div class="broker-specs-table">
-                <h2 class="specs-title">Thông tin tổng quan</h2>
-                <table class="specs-table">
-                    <tbody>
-                        <?php if ($meta['regulation']): ?>
-                        <tr>
-                            <th>🏛 Giấy phép</th>
-                            <td><?php echo esc_html($meta['regulation']); ?></td>
-                        </tr>
-                        <?php endif; ?>
-
-                        <?php if ($meta['spread']): ?>
-                        <tr>
-                            <th>📊 Spread</th>
-                            <td><?php echo esc_html($meta['spread']); ?></td>
-                        </tr>
-                        <?php endif; ?>
-
-                        <?php if ($meta['leverage']): ?>
-                        <tr>
-                            <th>📈 Đòn bẩy tối đa</th>
-                            <td><?php echo esc_html($meta['leverage']); ?></td>
-                        </tr>
-                        <?php endif; ?>
-
-                        <?php if ($meta['min_deposit']): ?>
-                        <tr>
-                            <th>💰 Nạp tối thiểu</th>
-                            <td><?php echo esc_html($meta['min_deposit']); ?></td>
-                        </tr>
-                        <?php endif; ?>
-
-                        <?php if ($meta['platforms']): ?>
-                        <tr>
-                            <th>🖥 Nền tảng</th>
-                            <td><?php echo esc_html($meta['platforms']); ?></td>
-                        </tr>
-                        <?php endif; ?>
-
-                        <?php if ($meta['founded']): ?>
-                        <tr>
-                            <th>📅 Năm thành lập</th>
-                            <td><?php echo esc_html($meta['founded']); ?></td>
-                        </tr>
-                        <?php endif; ?>
-
-                        <?php if ($meta['website_url']): ?>
-                        <tr>
-                            <th>🌐 Website</th>
-                            <td><a href="<?php echo esc_url($meta['website_url']); ?>" target="_blank" rel="noopener"><?php echo esc_html($meta['website_url']); ?></a></td>
-                        </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Ưu / Nhược điểm -->
-            <?php if (!empty($meta['pros']) || !empty($meta['cons'])): ?>
-            <div class="broker-pros-cons">
-                <?php if (!empty($meta['pros'])): ?>
-                <div class="pros-box">
-                    <h3 class="pros-title">✅ Ưu điểm</h3>
-                    <ul>
-                        <?php foreach ($meta['pros'] as $pro): ?>
-                        <li><?php echo esc_html(trim($pro)); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
-
-                <?php if (!empty($meta['cons'])): ?>
-                <div class="cons-box">
-                    <h3 class="cons-title">❌ Nhược điểm</h3>
-                    <ul>
-                        <?php foreach ($meta['cons'] as $con): ?>
-                        <li><?php echo esc_html(trim($con)); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-
-            <!-- CTA giữa bài -->
-            <?php if ($meta['affiliate_link']): ?>
-            <div class="inline-cta">
-                <a href="<?php echo esc_url($meta['affiliate_link']); ?>"
-                   class="btn btn-primary btn-lg"
-                   target="_blank" rel="noopener nofollow">
-                    Mở tài khoản <?php the_title(); ?> ngay →
-                </a>
-            </div>
-            <?php endif; ?>
-
-            <!-- Nội dung review chi tiết -->
-            <?php
-            $content = get_the_content();
-            $toc = fxt_table_of_contents($content);
-            if ($toc) echo $toc;
-            ?>
-
-            <div class="single-content entry-content">
-                <?php the_content(); ?>
-            </div>
-
-            <!-- CTA cuối bài -->
-            <?php if ($meta['affiliate_link']): ?>
-            <div class="bottom-cta-box">
-                <h3>Bạn đã sẵn sàng giao dịch với <?php the_title(); ?>?</h3>
-                <p>Mở tài khoản chỉ trong vài phút và bắt đầu giao dịch ngay hôm nay.</p>
-                <a href="<?php echo esc_url($meta['affiliate_link']); ?>"
-                   class="btn btn-primary btn-lg"
-                   target="_blank" rel="noopener nofollow">
-                    Đăng ký <?php the_title(); ?> miễn phí →
-                </a>
-            </div>
-            <?php endif; ?>
-
-            <!-- Share -->
-            <?php fxt_share_buttons(); ?>
-
+        <div class="broker-rating-box">
+            <div class="rating-big"><span class="rating-number-big"><?php echo esc_html($meta['rating'] ?: '0'); ?></span><span class="rating-max">/10</span></div>
+            <?php echo fxt_star_rating($meta['rating']); ?>
+            <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-block" target="_blank" rel="noopener nofollow"><?php echo esc_html($lbl_open); ?> <?php the_title(); ?></a>
         </div>
+    </div>
+</div></div>
 
-        <!-- Sidebar -->
-        <aside class="sidebar sidebar-sticky" role="complementary">
+<div class="container layout-with-sidebar"><div class="content-area">
+    <div class="broker-specs-table">
+        <h2 class="specs-title"><?php echo esc_html(get_theme_mod('fxt_broker_overview', 'Thông tin tổng quan')); ?></h2>
+        <table class="specs-table">
             <?php
-            if (is_active_sidebar('broker-sidebar')) {
-                dynamic_sidebar('broker-sidebar');
-            } else {
-                get_sidebar();
-            }
-            ?>
-        </aside>
+            $specs = [
+                ['regulation', '🏛', 'fxt_label_regulation', 'Regulation'],
+                ['spread', '📊', 'fxt_label_spread', 'Spread'],
+                ['leverage', '📈', 'fxt_label_leverage', 'Leverage'],
+                ['min_deposit', '💰', 'fxt_label_deposit', 'Min Deposit'],
+                ['platforms', '🖥', 'fxt_label_platforms', 'Platforms'],
+                ['founded', '📅', 'fxt_label_founded', 'Year Founded'],
+            ];
+            foreach ($specs as [$key, $icon, $mod_key, $default]):
+                if ($meta[$key]): ?>
+                <tr><th><?php echo $icon; ?> <?php echo esc_html(get_theme_mod($mod_key, $default)); ?></th><td><?php echo esc_html($meta[$key]); ?></td></tr>
+            <?php endif; endforeach;
+            if ($meta['website_url']): ?>
+                <tr><th>🌐 <?php echo esc_html(get_theme_mod('fxt_label_website', 'Website')); ?></th><td><a href="<?php echo esc_url($meta['website_url']); ?>" target="_blank" rel="noopener nofollow"><?php echo esc_html($meta['website_url']); ?></a></td></tr>
+            <?php endif; ?>
+        </table>
     </div>
 
-</article>
+    <?php if($meta['pros'] || $meta['cons']): ?>
+    <div class="broker-pros-cons">
+        <?php if($meta['pros']): ?><div class="pros-box"><h3 class="pros-title"><?php echo esc_html(get_theme_mod('fxt_broker_pros_title', '✅ Pros')); ?></h3><ul><?php foreach(explode("\n",$meta['pros']) as $p): if(trim($p)): ?><li><?php echo esc_html(trim($p)); ?></li><?php endif; endforeach; ?></ul></div><?php endif; ?>
+        <?php if($meta['cons']): ?><div class="cons-box"><h3 class="cons-title"><?php echo esc_html(get_theme_mod('fxt_broker_cons_title', '❌ Cons')); ?></h3><ul><?php foreach(explode("\n",$meta['cons']) as $c): if(trim($c)): ?><li><?php echo esc_html(trim($c)); ?></li><?php endif; endforeach; ?></ul></div><?php endif; ?>
+    </div>
+    <?php endif; ?>
 
-<?php endwhile; ?>
+    <div class="inline-cta"><a href="<?php echo esc_url($aff); ?>" class="btn btn-primary btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html($lbl_open); ?> <?php the_title(); ?> →</a></div>
 
-<?php get_footer(); ?>
+    <div class="entry-content"><?php the_content(); ?></div>
+    <?php echo fxt_share_buttons(); ?>
+
+    <div class="bottom-cta-box">
+        <h3><?php echo esc_html(str_replace('{name}', get_the_title(), get_theme_mod('fxt_broker_cta_ready', 'Are you ready to trade with {name}?'))); ?></h3>
+        <p><?php echo esc_html(get_theme_mod('fxt_broker_cta_desc', 'Open an account in just a few minutes and start trading today.')); ?></p>
+        <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Bắt đầu ngay →')); ?></a>
+    </div>
+</div><aside class="sidebar"><?php get_sidebar(); ?></aside></div>
+
+<?php endif; get_footer(); ?>

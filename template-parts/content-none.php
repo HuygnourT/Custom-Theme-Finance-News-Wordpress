@@ -1,21 +1,10 @@
-<?php
-/**
- * Template Part: Content None - Hiển thị khi không có bài viết
- * 
- * @package FXTradingToday
- */
-?>
-
 <div class="content-none">
-    <h2>Không tìm thấy nội dung</h2>
-
-    <?php if (is_search()): ?>
-        <p>Không tìm thấy kết quả cho "<strong><?php echo get_search_query(); ?></strong>". Hãy thử từ khóa khác.</p>
-    <?php else: ?>
-        <p>Chưa có bài viết nào. Hãy quay lại sau nhé!</p>
+    <h2><?php echo esc_html(get_theme_mod('fxt_label_notfound', 'No Content Found')); ?></h2>
+    <?php if (is_search()):
+        $tpl = get_theme_mod('fxt_label_notfound_search', 'No results found for "{query}". Please try different keywords.');
+        echo '<p>' . esc_html(str_replace('{query}', get_search_query(), $tpl)) . '</p>';
+    else: ?>
+        <p>No articles yet.</p>
     <?php endif; ?>
-
-    <div class="content-none-search">
-        <?php get_search_form(); ?>
-    </div>
+    <?php get_search_form(); ?>
 </div>

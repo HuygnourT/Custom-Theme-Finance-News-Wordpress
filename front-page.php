@@ -1,191 +1,107 @@
-<?php
-/**
- * Front Page Template - Trang chủ
- * 
- * WP ưu tiên file này cho trang chủ.
- * Layout: Hero → Top Brokers → Bài viết mới → Kiến thức
- * 
- * @package FXTradingToday
- */
+<?php get_header(); ?>
 
-get_header();
-?>
-
-<!-- ═══ HERO SECTION ═══ -->
 <section class="hero-section">
-    <div class="container">
-        <div class="hero-content">
-            <h1 class="hero-title">
-                Đánh giá sàn Forex <span class="text-accent">uy tín</span> cho nhà đầu tư Việt Nam
-            </h1>
-            <p class="hero-desc">
-                So sánh chi tiết các sàn giao dịch Forex hàng đầu. Đánh giá khách quan về spread, leverage, regulation và trải nghiệm thực tế.
-            </p>
-            <div class="hero-actions">
-                <a href="<?php echo get_post_type_archive_link('broker'); ?>" class="btn btn-primary btn-lg">
-                    Xem đánh giá sàn
-                </a>
-                <a href="#latest-posts" class="btn btn-outline btn-lg">
-                    Kiến thức Forex
-                </a>
-            </div>
+    <div class="container"><div class="hero-content">
+        <div class="hero-badge"><span class="dot"></span> <?php echo esc_html(get_theme_mod('fxt_hero_badge', 'Latest Forex Broker Reviews' . date('Y'))); ?></div>
+        <h1 class="hero-title"><?php
+            $title = get_theme_mod('fxt_hero_title', '{accent}Trusted{/accent} Forex Broker Reviews for Investors');
+            echo str_replace(['{accent}', '{/accent}'], ['<span class="text-accent">', '</span>'], esc_html($title));
+        ?></h1>
+        <p class="hero-desc"><?php echo esc_html(get_theme_mod('fxt_hero_desc', 'Detailed comparison of top Forex brokers. Objective reviews of spreads, leverage, regulation, and real trading experience.')); ?></p>
+        <div class="hero-actions">
+            <a href="<?php echo get_post_type_archive_link('broker'); ?>" class="btn btn-primary btn-lg"><?php echo esc_html(get_theme_mod('fxt_hero_btn1', 'View Broker Reviews')); ?></a>
+            <a href="<?php echo get_permalink(get_option('page_for_posts')); ?>" class="btn btn-outline btn-lg"><?php echo esc_html(get_theme_mod('fxt_hero_btn2', 'Forex Education')); ?></a>
         </div>
-    </div>
+        <div class="hero-stats">
+            <?php for ($i = 1; $i <= 3; $i++): ?>
+            <div class="hero-stat">
+                <div class="hero-stat-number"><?php echo esc_html(get_theme_mod("fxt_hero_stat{$i}_num")); ?></div>
+                <div class="hero-stat-label"><?php echo esc_html(get_theme_mod("fxt_hero_stat{$i}_label")); ?></div>
+            </div>
+            <?php endfor; ?>
+        </div>
+    </div></div>
 </section>
 
-<!-- ═══ TOP BROKERS ═══ -->
-<?php
-$brokers = new WP_Query([
-    'post_type'      => 'broker',
-    'posts_per_page' => 5,
-    'meta_key'       => '_fxt_rating',
-    'orderby'        => 'meta_value_num',
-    'order'          => 'DESC',
-]);
+<?php $viewall = esc_html(get_theme_mod('fxt_section_viewall', 'View All →')); ?>
 
-if ($brokers->have_posts()):
-?>
-<section class="section top-brokers">
+<section class="section section-alt">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">🏆 Top Broker được đề xuất</h2>
-            <a href="<?php echo get_post_type_archive_link('broker'); ?>" class="section-link">Xem tất cả →</a>
+            <h2 class="section-title"><?php echo esc_html(get_theme_mod('fxt_section_brokers', '🏆 Top Recommended Brokers')); ?></h2>
+            <a href="<?php echo get_post_type_archive_link('broker'); ?>" class="section-link"><?php echo $viewall; ?></a>
         </div>
-
         <div class="broker-cards">
-            <?php $rank = 1; while ($brokers->have_posts()): $brokers->the_post();
-                $meta = fxt_get_broker_meta(get_the_ID());
-            ?>
-            <div class="broker-card">
-                <div class="broker-card-rank">#<?php echo $rank++; ?></div>
+        <?php
+        $brokers = new WP_Query(['post_type'=>'broker','posts_per_page'=>5,'meta_key'=>'_fxt_rating','orderby'=>'meta_value_num','order'=>'DESC']);
+        $rank = 1;
+        $lbl_spread = esc_html(get_theme_mod('fxt_label_spread', 'Spread'));
+        $lbl_leverage = esc_html(get_theme_mod('fxt_label_leverage', 'Leverage'));
+        $lbl_deposit = esc_html(get_theme_mod('fxt_label_deposit', 'Minimum Deposit'));
+        $lbl_regulation = esc_html(get_theme_mod('fxt_label_regulation', 'Regulation'));
+        $lbl_review = esc_html(get_theme_mod('fxt_broker_read_review', 'Read Review'));
+        $lbl_open = esc_html(get_theme_mod('fxt_broker_open_account', 'Open Account'));
 
-                <div class="broker-card-header">
-                    <?php if (has_post_thumbnail()): ?>
-                        <div class="broker-card-logo">
-                            <?php the_post_thumbnail('fxt-broker-logo'); ?>
-                        </div>
-                    <?php endif; ?>
-                    <div class="broker-card-info">
-                        <h3 class="broker-card-name">
-                            <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-                        </h3>
-                        <?php echo fxt_star_rating($meta['rating']); ?>
-                    </div>
+        if ($brokers->have_posts()): while ($brokers->have_posts()): $brokers->the_post();
+            $meta = fxt_get_broker_meta(get_the_ID());
+        ?>
+            <div class="broker-card <?php echo $rank === 1 ? 'featured' : ''; ?>">
+                <div class="broker-rank">#<?php echo $rank++; ?></div>
+                <div class="broker-info">
+                    <div class="broker-logo"><?php if(has_post_thumbnail()): the_post_thumbnail('fxt-broker-logo'); else: echo '<span>'.esc_html(mb_substr(get_the_title(),0,2)).'</span>'; endif; ?></div>
+                    <div><div class="broker-name"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></div><?php echo fxt_star_rating($meta['rating']); ?></div>
                 </div>
-
-                <div class="broker-card-specs">
-                    <?php if ($meta['spread']): ?>
-                    <div class="broker-spec">
-                        <span class="spec-label">Spread</span>
-                        <span class="spec-value"><?php echo esc_html($meta['spread']); ?></span>
-                    </div>
-                    <?php endif; ?>
-
-                    <?php if ($meta['leverage']): ?>
-                    <div class="broker-spec">
-                        <span class="spec-label">Đòn bẩy</span>
-                        <span class="spec-value"><?php echo esc_html($meta['leverage']); ?></span>
-                    </div>
-                    <?php endif; ?>
-
-                    <?php if ($meta['min_deposit']): ?>
-                    <div class="broker-spec">
-                        <span class="spec-label">Nạp tối thiểu</span>
-                        <span class="spec-value"><?php echo esc_html($meta['min_deposit']); ?></span>
-                    </div>
-                    <?php endif; ?>
-
-                    <?php if ($meta['regulation']): ?>
-                    <div class="broker-spec">
-                        <span class="spec-label">Giấy phép</span>
-                        <span class="spec-value"><?php echo esc_html($meta['regulation']); ?></span>
-                    </div>
-                    <?php endif; ?>
+                <div class="broker-specs">
+                    <div class="broker-spec"><span class="spec-label"><?php echo $lbl_spread; ?></span><span class="spec-value"><?php echo esc_html($meta['spread'] ?: 'N/A'); ?></span></div>
+                    <div class="broker-spec"><span class="spec-label"><?php echo $lbl_leverage; ?></span><span class="spec-value"><?php echo esc_html($meta['leverage'] ?: 'N/A'); ?></span></div>
+                    <div class="broker-spec"><span class="spec-label"><?php echo $lbl_deposit; ?></span><span class="spec-value"><?php echo esc_html($meta['min_deposit'] ?: 'N/A'); ?></span></div>
+                    <div class="broker-spec"><span class="spec-label"><?php echo $lbl_regulation; ?></span><span class="spec-value"><?php echo esc_html($meta['regulation'] ?: 'N/A'); ?></span></div>
                 </div>
-
-                <div class="broker-card-actions">
-                    <a href="<?php the_permalink(); ?>" class="btn btn-outline btn-sm">Đọc đánh giá</a>
-                    <?php if ($meta['affiliate_link']): ?>
-                    <a href="<?php echo esc_url($meta['affiliate_link']); ?>" class="btn btn-primary btn-sm" target="_blank" rel="noopener nofollow">
-                        Mở tài khoản
-                    </a>
+                <div class="broker-actions">
+                    <a href="<?php the_permalink(); ?>" class="btn btn-outline btn-sm"><?php echo $lbl_review; ?></a>
+                    <?php $aff = $meta['affiliate_link'] ?: get_theme_mod('fxt_default_affiliate_link',''); if($aff): ?>
+                    <a href="<?php echo esc_url($aff); ?>" class="btn btn-primary btn-sm" target="_blank" rel="noopener nofollow"><?php echo $lbl_open; ?></a>
                     <?php endif; ?>
                 </div>
             </div>
-            <?php endwhile; ?>
-        </div>
-    </div>
-</section>
-<?php wp_reset_postdata(); endif; ?>
-
-<!-- ═══ BÀI VIẾT MỚI NHẤT ═══ -->
-<section class="section latest-posts" id="latest-posts">
-    <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">📝 Bài viết mới nhất</h2>
-            <a href="<?php echo get_permalink(get_option('page_for_posts')); ?>" class="section-link">Xem tất cả →</a>
-        </div>
-
-        <div class="posts-grid posts-grid-3">
-            <?php
-            $latest = new WP_Query([
-                'post_type'      => 'post',
-                'posts_per_page' => 6,
-                'post_status'    => 'publish',
-            ]);
-
-            while ($latest->have_posts()): $latest->the_post();
-                get_template_part('template-parts/content', 'card');
-            endwhile;
-            wp_reset_postdata();
-            ?>
+        <?php endwhile; wp_reset_postdata(); endif; ?>
         </div>
     </div>
 </section>
 
-<!-- ═══ KIẾN THỨC FOREX ═══ -->
-<?php
-$knowledge_cat = get_category_by_slug('kien-thuc-forex');
-if ($knowledge_cat):
-    $knowledge = new WP_Query([
-        'category__in'   => [$knowledge_cat->term_id],
-        'posts_per_page' => 4,
-        'post_status'    => 'publish',
-    ]);
-
-    if ($knowledge->have_posts()):
-?>
-<section class="section knowledge-section">
+<section class="section">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">📚 Kiến thức Forex</h2>
-            <a href="<?php echo get_category_link($knowledge_cat->term_id); ?>" class="section-link">Xem tất cả →</a>
+            <h2 class="section-title"><?php echo esc_html(get_theme_mod('fxt_section_latest', '📝 Latest Articles')); ?></h2>
+            <a href="<?php echo get_permalink(get_option('page_for_posts')); ?>" class="section-link"><?php echo $viewall; ?></a>
         </div>
+        <div class="posts-grid">
+        <?php $latest = new WP_Query(['posts_per_page'=>3,'ignore_sticky_posts'=>true]);
+        if($latest->have_posts()): while($latest->have_posts()): $latest->the_post(); get_template_part('template-parts/content-card'); endwhile; wp_reset_postdata(); endif; ?>
+        </div>
+    </div>
+</section>
 
+<?php $know_slug = get_theme_mod('fxt_knowledge_category', 'education'); $know_cat = get_category_by_slug($know_slug); ?>
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title"><?php echo esc_html(get_theme_mod('fxt_section_knowledge', '📚 Forex Education')); ?></h2>
+            <?php if($know_cat): ?><a href="<?php echo get_category_link($know_cat->term_id); ?>" class="section-link"><?php echo $viewall; ?></a><?php endif; ?>
+        </div>
         <div class="posts-grid posts-grid-2">
-            <?php while ($knowledge->have_posts()): $knowledge->the_post(); ?>
-                <?php get_template_part('template-parts/content', 'card-horizontal'); ?>
-            <?php endwhile; ?>
+        <?php $knowledge = new WP_Query(['posts_per_page'=>2,'category_name'=>$know_slug,'ignore_sticky_posts'=>true]);
+        if($knowledge->have_posts()): while($knowledge->have_posts()): $knowledge->the_post(); get_template_part('template-parts/content-card-horizontal'); endwhile; wp_reset_postdata(); endif; ?>
         </div>
     </div>
 </section>
-<?php
-    wp_reset_postdata();
-    endif;
-endif;
-?>
 
-<!-- ═══ CTA SECTION ═══ -->
-<section class="section cta-section">
-    <div class="container">
-        <div class="cta-box">
-            <h2>Bắt đầu giao dịch Forex ngay hôm nay</h2>
-            <p>So sánh và chọn sàn giao dịch phù hợp nhất với nhu cầu của bạn</p>
-            <a href="<?php echo get_post_type_archive_link('broker'); ?>" class="btn btn-primary btn-lg">
-                So sánh các sàn Forex →
-            </a>
-        </div>
-    </div>
+<section class="cta-section">
+    <div class="container"><div class="cta-box">
+        <h2><?php echo esc_html(get_theme_mod('fxt_cta_title', 'Start Trading Forex Today')); ?></h2>
+        <p><?php echo esc_html(get_theme_mod('fxt_cta_desc', 'Compare and choose the best broker that suits your needs')); ?></p>
+        <a href="<?php echo get_post_type_archive_link('broker'); ?>" class="btn btn-cta btn-lg"><?php echo esc_html(get_theme_mod('fxt_cta_btn', 'Compare Forex Brokers →')); ?></a>
+    </div></div>
 </section>
 
 <?php get_footer(); ?>
