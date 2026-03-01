@@ -143,21 +143,4 @@ function fxt_share_buttons() {
     <?php
 }
 
-/**
- * Get broker meta fields
- */
-function fxt_get_broker_meta($post_id) {
-    return [
-        'rating'         => get_post_meta($post_id, '_fxt_rating', true),
-        'spread'         => get_post_meta($post_id, '_fxt_spread', true),
-        'leverage'       => get_post_meta($post_id, '_fxt_leverage', true),
-        'min_deposit'    => get_post_meta($post_id, '_fxt_min_deposit', true),
-        'regulation'     => get_post_meta($post_id, '_fxt_regulation', true),
-        'founded'        => get_post_meta($post_id, '_fxt_founded', true),
-        'platforms'      => get_post_meta($post_id, '_fxt_platforms', true),
-        'affiliate_link' => get_post_meta($post_id, '_fxt_affiliate_link', true),
-        'website_url'    => get_post_meta($post_id, '_fxt_website_url', true),
-        'pros'           => get_post_meta($post_id, '_fxt_pros', true),
-        'cons'           => get_post_meta($post_id, '_fxt_cons', true),
-    ];
-}
+
