@@ -38,13 +38,8 @@ $lbl_open = get_theme_mod('fxt_broker_open_account', 'Open Account');
                     ['founded', '📅', 'fxt_label_founded', 'Year Founded'],
                 ];
                 foreach ($specs as [$key, $icon, $mod_key, $default]):
-                    // platforms is returned as string, pros/cons as arrays
-                    $value = $meta[$key];
-                    if (is_array($value)) {
-                        $value = implode(', ', $value);
-                    }
-                    if ($value): ?>
-                    <tr><th><?php echo $icon; ?> <?php echo esc_html(get_theme_mod($mod_key, $default)); ?></th><td><?php echo esc_html($value); ?></td></tr>
+                    if ($meta[$key]): ?>
+                    <tr><th><?php echo $icon; ?> <?php echo esc_html(get_theme_mod($mod_key, $default)); ?></th><td><?php echo esc_html($meta[$key]); ?></td></tr>
                 <?php endif; endforeach;
                 if ($meta['website_url']): ?>
                     <tr><th>🌐 <?php echo esc_html(get_theme_mod('fxt_label_website', 'Website')); ?></th><td><a href="<?php echo esc_url($meta['website_url']); ?>" target="_blank" rel="noopener nofollow"><?php echo esc_html($meta['website_url']); ?></a></td></tr>
@@ -53,17 +48,18 @@ $lbl_open = get_theme_mod('fxt_broker_open_account', 'Open Account');
         </div>
 
         <?php
-        // pros và cons đã là array từ fxt_get_broker_meta()
-        $pros = $meta['pros'];
-        $cons = $meta['cons'];
+        // FIX: $meta['pros'] và $meta['cons'] ĐÃ LÀ ARRAY từ fxt_get_broker_meta()
+        // Không cần explode() lại nữa
+        $pros = $meta['pros']; // already array
+        $cons = $meta['cons']; // already array
         if ($pros || $cons): ?>
         <div class="broker-pros-cons">
             <?php if($pros): ?>
             <div class="pros-box">
                 <h3 class="pros-title"><?php echo esc_html(get_theme_mod('fxt_broker_pros_title', '✅ Pros')); ?></h3>
                 <ul>
-                    <?php foreach($pros as $p): if(trim($p)): ?>
-                    <li><?php echo esc_html(trim($p)); ?></li>
+                    <?php foreach($pros as $p): $p = trim($p); if($p): ?>
+                    <li><?php echo esc_html($p); ?></li>
                     <?php endif; endforeach; ?>
                 </ul>
             </div>
@@ -72,8 +68,8 @@ $lbl_open = get_theme_mod('fxt_broker_open_account', 'Open Account');
             <div class="cons-box">
                 <h3 class="cons-title"><?php echo esc_html(get_theme_mod('fxt_broker_cons_title', '❌ Cons')); ?></h3>
                 <ul>
-                    <?php foreach($cons as $c): if(trim($c)): ?>
-                    <li><?php echo esc_html(trim($c)); ?></li>
+                    <?php foreach($cons as $c): $c = trim($c); if($c): ?>
+                    <li><?php echo esc_html($c); ?></li>
                     <?php endif; endforeach; ?>
                 </ul>
             </div>

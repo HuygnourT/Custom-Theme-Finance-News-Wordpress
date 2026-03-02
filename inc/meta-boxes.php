@@ -2,11 +2,9 @@
 /**
  * Meta Boxes - Custom Fields cho Broker
  * 
- * Meta box = form nhập liệu thêm trong editor
- * Giống việc thêm fields vào form trong frontend app
- * 
- * Mỗi broker sẽ có: rating, spread, leverage, min deposit,
- * regulation, affiliate link, pros/cons...
+ * FIX 1: Thêm 'classic-editor' support để Gutenberg không block meta box
+ * FIX 2: Lưu pros/cons dùng wp_kses_post thay vì sanitize_text_field
+ *         để giữ line breaks
  * 
  * @package FXTradingToday
  */
@@ -18,24 +16,32 @@ if (!defined('ABSPATH')) exit;
  */
 add_action('add_meta_boxes', function () {
     add_meta_box(
-        'fxt_broker_details',           // ID
-        'Thông Tin Broker',             // Tiêu đề hiển thị
-        'fxt_broker_meta_box_html',     // Callback render HTML
-        'broker',                       // Post type
-        'normal',                       // Vị trí: normal (dưới editor), side (sidebar)
-        'high'                          // Ưu tiên: high (hiện trên cùng)
+        'fxt_broker_details',
+        'Information Broker',
+        'fxt_broker_meta_box_html',
+        'broker',
+        'normal',
+        'high'
     );
 });
 
 /**
+ * FIX: Tắt Gutenberg cho broker post type
+ * Gutenberg + classic meta box = conflict → không save được
+ */
+add_filter('use_block_editor_for_post_type', function ($use_block_editor, $post_type) {
+    if ($post_type === 'broker') {
+        return false; // Dùng Classic Editor cho broker
+    }
+    return $use_block_editor;
+}, 10, 2);
+
+/**
  * Render HTML cho meta box
- * Đây là form nhập liệu trong WP Admin
  */
 function fxt_broker_meta_box_html($post) {
-    // Nonce field - bảo mật chống CSRF (giống csrf token trong Express)
     wp_nonce_field('fxt_broker_meta', 'fxt_broker_meta_nonce');
 
-    // Lấy giá trị đã lưu (nếu có)
     $fields = [
         'rating'         => get_post_meta($post->ID, '_fxt_rating', true),
         'spread'         => get_post_meta($post->ID, '_fxt_spread', true),
@@ -59,13 +65,13 @@ function fxt_broker_meta_box_html($post) {
         .fxt-meta-field input:focus, .fxt-meta-field textarea:focus { border-color: #2271b1; outline: none; box-shadow: 0 0 0 1px #2271b1; }
         .fxt-meta-section { background: #f6f7f7; padding: 15px; border-radius: 6px; margin-top: 15px; }
         .fxt-meta-section h4 { margin: 0 0 10px; color: #1e3a5f; }
+        .fxt-meta-hint { font-size: 12px; color: #666; margin-top: 4px; font-style: italic; }
     </style>
 
     <div class="fxt-meta-grid">
-        <!-- Cột trái -->
         <div>
             <div class="fxt-meta-field">
-                <label for="fxt_rating">⭐ Điểm đánh giá (0-10)</label>
+                <label for="fxt_rating">⭐ Rating (0–10)</label>
                 <input type="number" id="fxt_rating" name="fxt_rating"
                        value="<?php echo esc_attr($fields['rating']); ?>"
                        min="0" max="10" step="0.1" placeholder="8.5">
@@ -79,38 +85,37 @@ function fxt_broker_meta_box_html($post) {
             </div>
 
             <div class="fxt-meta-field">
-                <label for="fxt_leverage">📈 Đòn bẩy tối đa</label>
+                <label for="fxt_leverage">📈 Maximum Leverage</label>
                 <input type="text" id="fxt_leverage" name="fxt_leverage"
                        value="<?php echo esc_attr($fields['leverage']); ?>"
                        placeholder="1:2000">
             </div>
 
             <div class="fxt-meta-field">
-                <label for="fxt_min_deposit">💰 Nạp tối thiểu</label>
+                <label for="fxt_min_deposit">💰 Minimum Deposit</label>
                 <input type="text" id="fxt_min_deposit" name="fxt_min_deposit"
                        value="<?php echo esc_attr($fields['min_deposit']); ?>"
                        placeholder="$1">
             </div>
         </div>
 
-        <!-- Cột phải -->
         <div>
             <div class="fxt-meta-field">
-                <label for="fxt_regulation">🏛 Giấy phép</label>
+                <label for="fxt_regulation">🏛 Regulation</label>
                 <input type="text" id="fxt_regulation" name="fxt_regulation"
                        value="<?php echo esc_attr($fields['regulation']); ?>"
                        placeholder="FCA, CySEC, ASIC...">
             </div>
 
             <div class="fxt-meta-field">
-                <label for="fxt_founded">📅 Năm thành lập</label>
+                <label for="fxt_founded">📅 Year Founded</label>
                 <input type="text" id="fxt_founded" name="fxt_founded"
                        value="<?php echo esc_attr($fields['founded']); ?>"
                        placeholder="2008">
             </div>
 
             <div class="fxt-meta-field">
-                <label for="fxt_platforms">🖥 Nền tảng giao dịch</label>
+                <label for="fxt_platforms">🖥 Trading Platforms</label>
                 <input type="text" id="fxt_platforms" name="fxt_platforms"
                        value="<?php echo esc_attr($fields['platforms']); ?>"
                        placeholder="MT4, MT5, cTrader...">
@@ -125,25 +130,25 @@ function fxt_broker_meta_box_html($post) {
         </div>
     </div>
 
-    <!-- Website URL -->
     <div class="fxt-meta-field">
-        <label for="fxt_website_url">🌐 Website chính thức</label>
+        <label for="fxt_website_url">🌐 Official Website</label>
         <input type="url" id="fxt_website_url" name="fxt_website_url"
                value="<?php echo esc_attr($fields['website_url']); ?>"
                placeholder="https://exness.com">
     </div>
 
-    <!-- Ưu/Nhược điểm -->
     <div class="fxt-meta-section">
-        <h4>✅ Ưu điểm (mỗi ưu điểm 1 dòng)</h4>
-        <textarea id="fxt_pros" name="fxt_pros" rows="4"
+        <h4>✅ Pros (one per line)</h4>
+        <textarea id="fxt_pros" name="fxt_pros" rows="5"
                   placeholder="Spread thấp&#10;Rút tiền nhanh&#10;Hỗ trợ tiếng Việt"><?php echo esc_textarea($fields['pros']); ?></textarea>
+        <p class="fxt-meta-hint">Press Enter to add each advantage. Each line = 1 bullet point on the website.</p>
     </div>
 
     <div class="fxt-meta-section">
-        <h4>❌ Nhược điểm (mỗi nhược điểm 1 dòng)</h4>
-        <textarea id="fxt_cons" name="fxt_cons" rows="4"
+        <h4>❌ Cons (one per line)</h4>
+        <textarea id="fxt_cons" name="fxt_cons" rows="5"
                   placeholder="Phí qua đêm cao&#10;Không có bonus"><?php echo esc_textarea($fields['cons']); ?></textarea>
+        <p class="fxt-meta-hint">Press Enter to add each disadvantage. Each line = 1 bullet point on the website.</p>
     </div>
 
     <?php
@@ -151,11 +156,11 @@ function fxt_broker_meta_box_html($post) {
 
 /**
  * Lưu meta data khi save post
- * Giống xử lý POST request trong Express
+ * FIX: Dùng sanitize_textarea_field cho pros/cons để giữ \n
  */
 add_action('save_post_broker', function ($post_id) {
 
-    // Kiểm tra nonce (CSRF protection)
+    // Kiểm tra nonce
     if (!isset($_POST['fxt_broker_meta_nonce']) ||
         !wp_verify_nonce($_POST['fxt_broker_meta_nonce'], 'fxt_broker_meta')) {
         return;
@@ -171,7 +176,7 @@ add_action('save_post_broker', function ($post_id) {
         return;
     }
 
-    // Danh sách fields cần lưu
+    // Text fields - sanitize_text_field (1 dòng)
     $text_fields = [
         'fxt_rating'         => '_fxt_rating',
         'fxt_spread'         => '_fxt_spread',
@@ -180,23 +185,35 @@ add_action('save_post_broker', function ($post_id) {
         'fxt_regulation'     => '_fxt_regulation',
         'fxt_founded'        => '_fxt_founded',
         'fxt_platforms'      => '_fxt_platforms',
+    ];
+
+    // Textarea fields - sanitize_textarea_field (giữ line breaks)
+    $textarea_fields = [
         'fxt_pros'           => '_fxt_pros',
         'fxt_cons'           => '_fxt_cons',
     ];
 
+    // URL fields
     $url_fields = [
         'fxt_affiliate_link' => '_fxt_affiliate_link',
         'fxt_website_url'    => '_fxt_website_url',
     ];
 
-    // Lưu text fields
     foreach ($text_fields as $form_key => $meta_key) {
         if (isset($_POST[$form_key])) {
             update_post_meta($post_id, $meta_key, sanitize_text_field($_POST[$form_key]));
         }
     }
 
-    // Lưu URL fields
+    // FIX: Dùng sanitize_textarea_field thay vì sanitize_text_field
+    // sanitize_textarea_field GIỮ line breaks (\n)
+    // sanitize_text_field XÓA line breaks → pros/cons thành 1 dòng
+    foreach ($textarea_fields as $form_key => $meta_key) {
+        if (isset($_POST[$form_key])) {
+            update_post_meta($post_id, $meta_key, sanitize_textarea_field($_POST[$form_key]));
+        }
+    }
+
     foreach ($url_fields as $form_key => $meta_key) {
         if (isset($_POST[$form_key])) {
             update_post_meta($post_id, $meta_key, esc_url_raw($_POST[$form_key]));
@@ -206,7 +223,6 @@ add_action('save_post_broker', function ($post_id) {
 
 /**
  * Helper: Lấy tất cả meta data của broker
- * Dùng trong template: $broker = fxt_get_broker_meta($post->ID);
  */
 function fxt_get_broker_meta($post_id) {
     return [
@@ -216,10 +232,10 @@ function fxt_get_broker_meta($post_id) {
         'min_deposit'    => get_post_meta($post_id, '_fxt_min_deposit', true),
         'regulation'     => get_post_meta($post_id, '_fxt_regulation', true),
         'founded'        => get_post_meta($post_id, '_fxt_founded', true),
-        'platforms'       => get_post_meta($post_id, '_fxt_platforms', true),
+        'platforms'      => get_post_meta($post_id, '_fxt_platforms', true),
         'affiliate_link' => get_post_meta($post_id, '_fxt_affiliate_link', true),
         'website_url'    => get_post_meta($post_id, '_fxt_website_url', true),
-        'pros'           => array_filter(explode("\n", get_post_meta($post_id, '_fxt_pros', true) ?: '')),
-        'cons'           => array_filter(explode("\n", get_post_meta($post_id, '_fxt_cons', true) ?: '')),
+        'pros'           => array_filter(array_map('trim', explode("\n", get_post_meta($post_id, '_fxt_pros', true) ?: ''))),
+        'cons'           => array_filter(array_map('trim', explode("\n", get_post_meta($post_id, '_fxt_cons', true) ?: ''))),
     ];
 }
