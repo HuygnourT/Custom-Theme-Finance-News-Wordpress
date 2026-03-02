@@ -13,7 +13,6 @@ function fxt_reading_time($post_id = null) {
     $content = get_post_field('post_content', $post_id);
     $word_count = str_word_count(strip_tags($content));
     $minutes = max(1, ceil($word_count / 200));
-    // Lấy template từ Customizer, thay {min} = số phút
     $template = get_theme_mod('fxt_label_reading_time', '{min} min read');
     return str_replace('{min}', $minutes, $template);
 }
@@ -121,6 +120,33 @@ function fxt_related_posts($count = 4) {
 }
 
 /**
+ * Post meta - hiển thị thông tin bài viết
+ * *** ĐÂY LÀ FUNCTION BỊ THIẾU - gây "critical error" trên single post ***
+ */
+function fxt_post_meta() {
+    $categories = get_the_category();
+    ?>
+    <div class="post-meta">
+        <?php if ($categories): ?>
+        <a href="<?php echo esc_url(get_category_link($categories[0]->term_id)); ?>" class="post-cat-link"><?php echo esc_html($categories[0]->name); ?></a>
+        <?php endif; ?>
+        <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <?php echo get_the_date(); ?>
+        </span>
+        <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <?php the_author(); ?>
+        </span>
+        <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <?php echo esc_html(fxt_reading_time()); ?>
+        </span>
+    </div>
+    <?php
+}
+
+/**
  * Share buttons - label từ Customizer
  */
 function fxt_share_buttons() {
@@ -142,5 +168,3 @@ function fxt_share_buttons() {
     </div>
     <?php
 }
-
-
