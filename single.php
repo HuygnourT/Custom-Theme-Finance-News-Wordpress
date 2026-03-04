@@ -1,6 +1,7 @@
 <?php
 /**
  * Single Post Template - Bài viết chi tiết
+ * TẤT CẢ text lấy từ Customizer
  * 
  * @package FXTradingToday
  */
@@ -56,7 +57,7 @@ get_header();
             $tags = get_the_tags();
             if ($tags): ?>
             <div class="single-tags">
-                <span class="tags-label">Tags:</span>
+                <span class="tags-label"><?php echo esc_html(get_theme_mod('fxt_label_tags', 'Tags:')); ?></span>
                 <?php foreach ($tags as $tag): ?>
                     <a href="<?php echo get_tag_link($tag->term_id); ?>" class="tag-link"><?php echo esc_html($tag->name); ?></a>
                 <?php endforeach; ?>

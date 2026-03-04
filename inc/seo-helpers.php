@@ -124,16 +124,21 @@ add_action('wp_head', function () {
 
 /**
  * Breadcrumbs - Đường dẫn điều hướng
- * Hiển thị: Trang chủ > Danh mục > Bài viết
+ * Hiển thị: Home > Category > Post
  * Gọi trong template: fxt_breadcrumbs();
+ * 
+ * TẤT CẢ text lấy từ Customizer
  */
 function fxt_breadcrumbs() {
     if (is_front_page()) return;
 
     $sep = '<span class="breadcrumb-sep">›</span>';
+    $home_text = esc_html(get_theme_mod('fxt_breadcrumb_home', 'Home'));
+    $broker_archive_text = esc_html(get_theme_mod('fxt_breadcrumb_broker_archive', 'Broker Reviews'));
+    $search_prefix = esc_html(get_theme_mod('fxt_breadcrumb_search_prefix', 'Search: '));
 
     echo '<nav class="breadcrumbs" aria-label="Breadcrumb">';
-    echo '<a href="' . home_url('/') . '">Trang chủ</a>';
+    echo '<a href="' . home_url('/') . '">' . $home_text . '</a>';
 
     if (is_singular('post')) {
         $categories = get_the_category();
@@ -143,7 +148,7 @@ function fxt_breadcrumbs() {
         echo $sep . '<span class="breadcrumb-current">' . get_the_title() . '</span>';
 
     } elseif (is_singular('broker')) {
-        echo $sep . '<a href="' . get_post_type_archive_link('broker') . '">Đánh giá sàn</a>';
+        echo $sep . '<a href="' . get_post_type_archive_link('broker') . '">' . $broker_archive_text . '</a>';
         echo $sep . '<span class="breadcrumb-current">' . get_the_title() . '</span>';
 
     } elseif (is_category()) {
@@ -153,13 +158,13 @@ function fxt_breadcrumbs() {
         echo $sep . '<span class="breadcrumb-current">' . single_tag_title('', false) . '</span>';
 
     } elseif (is_search()) {
-        echo $sep . '<span class="breadcrumb-current">Tìm kiếm: ' . get_search_query() . '</span>';
+        echo $sep . '<span class="breadcrumb-current">' . $search_prefix . get_search_query() . '</span>';
 
     } elseif (is_page()) {
         echo $sep . '<span class="breadcrumb-current">' . get_the_title() . '</span>';
 
     } elseif (is_post_type_archive('broker')) {
-        echo $sep . '<span class="breadcrumb-current">Đánh giá sàn</span>';
+        echo $sep . '<span class="breadcrumb-current">' . $broker_archive_text . '</span>';
 
     } elseif (is_archive()) {
         echo $sep . '<span class="breadcrumb-current">' . get_the_archive_title() . '</span>';
@@ -205,11 +210,13 @@ add_action('wp_head', function () {
 
     $items = [];
     $position = 1;
+    $home_text = get_theme_mod('fxt_breadcrumb_home', 'Home');
+    $broker_archive_text = get_theme_mod('fxt_breadcrumb_broker_archive', 'Broker Reviews');
 
     $items[] = [
         '@type'    => 'ListItem',
         'position' => $position++,
-        'name'     => 'Trang chủ',
+        'name'     => $home_text,
         'item'     => home_url('/'),
     ];
 
@@ -232,7 +239,7 @@ add_action('wp_head', function () {
         $items[] = [
             '@type'    => 'ListItem',
             'position' => $position++,
-            'name'     => 'Đánh giá sàn',
+            'name'     => $broker_archive_text,
             'item'     => get_post_type_archive_link('broker'),
         ];
         $items[] = [

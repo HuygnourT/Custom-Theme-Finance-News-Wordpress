@@ -1,8 +1,11 @@
 <?php
 /**
- * Theme Customizer v2
+ * Theme Customizer v2.1
  * TẤT CẢ text đều custom được từ Appearance → Customize
  * Nội dung lưu trong database (wp_options) → update theme không mất
+ * 
+ * UPDATED: Thêm settings cho footer links, breadcrumbs, broker comparison,
+ *          search results, tags label
  */
 if (!defined('ABSPATH')) exit;
 
@@ -22,11 +25,11 @@ add_action('customize_register', function ($wp_customize) {
         'fxt_hero_desc'     => ['Description', 'Detailed comparison of top Forex brokers. Objective reviews of spreads, leverage, regulation, and real trading experience'],
         'fxt_hero_btn1'     => ['Primary Button', 'View Broker Reviews'],
         'fxt_hero_btn2'     => ['Secondary Button', 'Forex Education'],
-        'fxt_hero_stat1_num'   => ['Statistics 1 - Số', '15+'],
+        'fxt_hero_stat1_num'   => ['Statistics 1 - Number', '15+'],
         'fxt_hero_stat1_label' => ['Statistics 1 - Label', 'Brokers Reviewed'],
-        'fxt_hero_stat2_num'   => ['Statistics 2 - Số', '200+'],
+        'fxt_hero_stat2_num'   => ['Statistics 2 - Number', '200+'],
         'fxt_hero_stat2_label' => ['Statistics 2 - Label', 'Educational Articles'],
-        'fxt_hero_stat3_num'   => ['Statistics 3 - Số', '50K+'],
+        'fxt_hero_stat3_num'   => ['Statistics 3 - Number', '50K+'],
         'fxt_hero_stat3_label' => ['Statistics 3 - Label', 'Monthly Readers'],
     ];
 
@@ -39,14 +42,14 @@ add_action('customize_register', function ($wp_customize) {
     // ║  2. SECTION TITLES (HOME PAGE)                ║
     // ╚═══════════════════════════════════════════════╝
     $wp_customize->add_section('fxt_sections', [
-        'title'    => '🏠 Trang chủ - Sections',
+        'title'    => '🏠 Homepage - Sections',
         'priority' => 26,
     ]);
 
     $section_fields = [
         'fxt_section_brokers'    => ['Title Top Brokers', '🏆 Top Recommended Brokers'],
-        'fxt_section_latest'     => ['Title Bài viết mới', '📝 Latest Articles'],
-        'fxt_section_knowledge'  => ['Title Kiến thức', '📚 Education'],
+        'fxt_section_latest'     => ['Title Latest Articles', '📝 Latest Articles'],
+        'fxt_section_knowledge'  => ['Title Education', '📚 Education'],
         'fxt_section_viewall'    => ['Text "View All"', 'View All →'],
         'fxt_cta_title'          => ['CTA - Title', 'Start Trading Forex Today'],
         'fxt_cta_desc'           => ['CTA - Description', 'Compare and choose the best broker for your needs'],
@@ -63,7 +66,7 @@ add_action('customize_register', function ($wp_customize) {
     // ║  3. BROKER REVIEW LABELS                      ║
     // ╚═══════════════════════════════════════════════╝
     $wp_customize->add_section('fxt_broker_labels', [
-        'title'    => '📊 Labels trang Broker',
+        'title'    => '📊 Labels - Broker Pages',
         'priority' => 27,
     ]);
 
@@ -93,6 +96,29 @@ add_action('customize_register', function ($wp_customize) {
     }
 
     // ╔═══════════════════════════════════════════════╗
+    // ║  3b. BROKER COMPARISON PAGE                   ║
+    // ╚═══════════════════════════════════════════════╝
+    $wp_customize->add_section('fxt_broker_compare', [
+        'title'    => '📊 Broker Comparison Page',
+        'priority' => 27,
+    ]);
+
+    $compare_fields = [
+        'fxt_compare_title'              => ['Page Title (use {year} for current year)', 'Best Forex Brokers Comparison {year}'],
+        'fxt_compare_desc'               => ['Page Description', 'Detailed comparison of spreads, leverage, regulation, and features of the top forex brokers.'],
+        'fxt_compare_search_placeholder' => ['Search Placeholder', 'Search brokers...'],
+        'fxt_compare_sort_rating'        => ['Sort: Rating label', 'Sort: Highest Rating'],
+        'fxt_compare_sort_spread'        => ['Sort: Spread label', 'Sort: Lowest Spread'],
+        'fxt_compare_sort_deposit'       => ['Sort: Deposit label', 'Sort: Lowest Minimum Deposit'],
+        'fxt_compare_no_brokers'         => ['No brokers message', 'No brokers have been added yet.'],
+    ];
+
+    foreach ($compare_fields as $id => [$label, $default]) {
+        $wp_customize->add_setting($id, ['default' => $default, 'sanitize_callback' => 'sanitize_text_field']);
+        $wp_customize->add_control($id, ['label' => $label, 'section' => 'fxt_broker_compare', 'type' => 'text']);
+    }
+
+    // ╔═══════════════════════════════════════════════╗
     // ║  4. UI LABELS (General)                       ║
     // ╚═══════════════════════════════════════════════╝
     $wp_customize->add_section('fxt_ui_labels', [
@@ -103,10 +129,13 @@ add_action('customize_register', function ($wp_customize) {
     $ui_fields = [
         'fxt_label_search_placeholder' => ['Placeholder Search', 'Search articles, brokers...'],
         'fxt_label_search_btn'         => ['Search Button', 'Search'],
+        'fxt_label_search_results_title' => ['Search Results Title (use {query})', 'Search results: "{query}"'],
+        'fxt_label_search_count'       => ['Search Results Count (use {count})', 'Found {count} results'],
         'fxt_label_reading_time'       => ['Reading time (use {min} for minute)', '{min} min read'],
         'fxt_label_ago'                => ['Text "ago" (time ago)', 'ago'],
         'fxt_label_toc'                => ['Title Table of Contents', '📑 Table of Contents'],
         'fxt_label_share'              => ['Text Share', 'Share:'],
+        'fxt_label_tags'               => ['Text Tags', 'Tags:'],
         'fxt_label_related'            => ['Title Related Articles', 'Related Articles'],
         'fxt_label_prev'               => ['Pagination: Previous', '← Previous'],
         'fxt_label_next'               => ['Pagination: Next', 'Next →'],
@@ -124,6 +153,25 @@ add_action('customize_register', function ($wp_customize) {
     }
 
     // ╔═══════════════════════════════════════════════╗
+    // ║  4b. BREADCRUMBS                              ║
+    // ╚═══════════════════════════════════════════════╝
+    $wp_customize->add_section('fxt_breadcrumb_labels', [
+        'title'    => '🔗 Breadcrumbs',
+        'priority' => 28,
+    ]);
+
+    $breadcrumb_fields = [
+        'fxt_breadcrumb_home'           => ['Home text', 'Home'],
+        'fxt_breadcrumb_broker_archive' => ['Broker archive text', 'Broker Reviews'],
+        'fxt_breadcrumb_search_prefix'  => ['Search prefix', 'Search: '],
+    ];
+
+    foreach ($breadcrumb_fields as $id => [$label, $default]) {
+        $wp_customize->add_setting($id, ['default' => $default, 'sanitize_callback' => 'sanitize_text_field']);
+        $wp_customize->add_control($id, ['label' => $label, 'section' => 'fxt_breadcrumb_labels', 'type' => 'text']);
+    }
+
+    // ╔═══════════════════════════════════════════════╗
     // ║  5. SIDEBAR                                   ║
     // ╚═══════════════════════════════════════════════╝
     $wp_customize->add_section('fxt_sidebar_labels', [
@@ -134,7 +182,7 @@ add_action('customize_register', function ($wp_customize) {
     $sidebar_fields = [
         'fxt_sidebar_search'   => ['Widget Search', '🔍 Search'],
         'fxt_sidebar_brokers'  => ['Widget Top Broker', '🏆 Top Broker'],
-        'fxt_sidebar_popular'  => ['Widget Bài phổ biến', '📈 Popular Articles'],
+        'fxt_sidebar_popular'  => ['Widget Popular Articles', '📈 Popular Articles'],
     ];
 
     foreach ($sidebar_fields as $id => [$label, $default]) {
@@ -148,7 +196,7 @@ add_action('customize_register', function ($wp_customize) {
     $wp_customize->add_section('fxt_affiliate', ['title' => '💰 Affiliate Setup', 'priority' => 30]);
 
     $wp_customize->add_setting('fxt_default_affiliate_link', ['default' => '', 'sanitize_callback' => 'esc_url_raw']);
-    $wp_customize->add_control('fxt_default_affiliate_link', ['label' => 'Link Affiliate mặc định', 'section' => 'fxt_affiliate', 'type' => 'url']);
+    $wp_customize->add_control('fxt_default_affiliate_link', ['label' => 'Default Affiliate Link', 'section' => 'fxt_affiliate', 'type' => 'url']);
 
     $wp_customize->add_setting('fxt_cta_text', ['default' => 'Open Account', 'sanitize_callback' => 'sanitize_text_field']);
     $wp_customize->add_control('fxt_cta_text', ['label' => 'Text CTA Button (Header)', 'section' => 'fxt_affiliate', 'type' => 'text']);
@@ -171,8 +219,29 @@ add_action('customize_register', function ($wp_customize) {
     $wp_customize->add_setting('fxt_footer_about', ['default' => 'Providing trusted Forex education, broker reviews, and trading strategies for investors.', 'sanitize_callback' => 'sanitize_text_field']);
     $wp_customize->add_control('fxt_footer_about', ['label' => 'Short Description', 'section' => 'fxt_footer', 'type' => 'textarea']);
 
+    // Footer column titles
+    $wp_customize->add_setting('fxt_footer_col2_title', ['default' => 'Quick Links', 'sanitize_callback' => 'sanitize_text_field']);
+    $wp_customize->add_control('fxt_footer_col2_title', ['label' => 'Title column 2 (Quick Links / Categories)', 'section' => 'fxt_footer', 'type' => 'text']);
+
     $wp_customize->add_setting('fxt_footer_col3_title', ['default' => 'More information', 'sanitize_callback' => 'sanitize_text_field']);
     $wp_customize->add_control('fxt_footer_col3_title', ['label' => 'Title column 3', 'section' => 'fxt_footer', 'type' => 'text']);
+
+    // Footer link labels
+    $footer_link_fields = [
+        'fxt_footer_link_about'      => ['Link text: About Us', 'About Us'],
+        'fxt_footer_about_slug'      => ['Page slug: About Us', 'about-us'],
+        'fxt_footer_link_contact'    => ['Link text: Contact', 'Contact'],
+        'fxt_footer_contact_slug'    => ['Page slug: Contact', 'contact'],
+        'fxt_footer_link_disclaimer' => ['Link text: Disclaimer', 'Disclaimer'],
+        'fxt_footer_disclaimer_slug' => ['Page slug: Disclaimer', 'disclaimer'],
+        'fxt_footer_link_privacy'    => ['Link text: Privacy Policy', 'Privacy Policy'],
+        'fxt_footer_privacy_slug'    => ['Page slug: Privacy Policy', 'privacy-policy'],
+    ];
+
+    foreach ($footer_link_fields as $id => [$label, $default]) {
+        $wp_customize->add_setting($id, ['default' => $default, 'sanitize_callback' => 'sanitize_text_field']);
+        $wp_customize->add_control($id, ['label' => $label, 'section' => 'fxt_footer', 'type' => 'text']);
+    }
 
     $wp_customize->add_setting('fxt_disclaimer', ['default' => '⚠️ Forex/CFD trading involves high risk. You may lose all of your invested capital.', 'sanitize_callback' => 'wp_kses_post']);
     $wp_customize->add_control('fxt_disclaimer', ['label' => 'Risk Disclaimer', 'section' => 'fxt_footer', 'type' => 'textarea']);

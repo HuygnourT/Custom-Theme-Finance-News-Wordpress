@@ -11,23 +11,28 @@
             </div>
         </div>
         <div>
-            <?php if(has_nav_menu('footer')): ?><h4 class="footer-widget-title">Quick Links</h4><?php wp_nav_menu(['theme_location'=>'footer','container'=>false,'menu_class'=>'footer-links','depth'=>1]);
+            <?php if(has_nav_menu('footer')): ?>
+            <h4 class="footer-widget-title"><?php echo esc_html(get_theme_mod('fxt_footer_col2_title', 'Quick Links')); ?></h4>
+            <?php wp_nav_menu(['theme_location'=>'footer','container'=>false,'menu_class'=>'footer-links','depth'=>1]);
             elseif(is_active_sidebar('footer-col-2')): dynamic_sidebar('footer-col-2');
-            else: ?><h4 class="footer-widget-title">Categories</h4><ul class="footer-links"><?php wp_list_categories(['title_li'=>'','show_count'=>0,'number'=>6]); ?></ul><?php endif; ?>
+            else: ?>
+            <h4 class="footer-widget-title"><?php echo esc_html(get_theme_mod('fxt_footer_col2_title', 'Categories')); ?></h4>
+            <ul class="footer-links"><?php wp_list_categories(['title_li'=>'','show_count'=>0,'number'=>6]); ?></ul>
+            <?php endif; ?>
         </div>
         <div>
             <?php if(is_active_sidebar('footer-col-3')): dynamic_sidebar('footer-col-3'); else: ?>
-            <h4 class="footer-widget-title"><?php echo esc_html(get_theme_mod('fxt_footer_col3_title', 'Thông tin')); ?></h4>
+            <h4 class="footer-widget-title"><?php echo esc_html(get_theme_mod('fxt_footer_col3_title', 'More information')); ?></h4>
             <ul class="footer-links">
-                <li><a href="<?php echo esc_url(home_url('/about-us/')); ?>">About Us</a></li>
-                <li><a href="<?php echo esc_url(home_url('/contact/')); ?>">Contact</a></li>
-                <li><a href="<?php echo esc_url(home_url('/disclaimer/')); ?>">Disclaimer</a></li>
-                <li><a href="<?php echo esc_url(home_url('/privacy-policy/')); ?>">Privacy Policy</a></li>
+                <li><a href="<?php echo esc_url(home_url('/' . get_theme_mod('fxt_footer_about_slug', 'about-us') . '/')); ?>"><?php echo esc_html(get_theme_mod('fxt_footer_link_about', 'About Us')); ?></a></li>
+                <li><a href="<?php echo esc_url(home_url('/' . get_theme_mod('fxt_footer_contact_slug', 'contact') . '/')); ?>"><?php echo esc_html(get_theme_mod('fxt_footer_link_contact', 'Contact')); ?></a></li>
+                <li><a href="<?php echo esc_url(home_url('/' . get_theme_mod('fxt_footer_disclaimer_slug', 'disclaimer') . '/')); ?>"><?php echo esc_html(get_theme_mod('fxt_footer_link_disclaimer', 'Disclaimer')); ?></a></li>
+                <li><a href="<?php echo esc_url(home_url('/' . get_theme_mod('fxt_footer_privacy_slug', 'privacy-policy') . '/')); ?>"><?php echo esc_html(get_theme_mod('fxt_footer_link_privacy', 'Privacy Policy')); ?></a></li>
             </ul>
             <?php endif; ?>
         </div>
     </div></div>
-    <div class="footer-disclaimer"><div class="container"><p class="disclaimer-text">⚠️ <?php echo wp_kses_post(get_theme_mod('fxt_disclaimer', '⚠️ Forex and CFD trading carry a high level of risk and may not be suitable for all investors. You could lose your entire investment')); ?></p></div></div>
+    <div class="footer-disclaimer"><div class="container"><p class="disclaimer-text"><?php echo wp_kses_post(get_theme_mod('fxt_disclaimer', '⚠️ Forex and CFD trading carry a high level of risk and may not be suitable for all investors. You could lose your entire investment')); ?></p></div></div>
     <div class="footer-bottom"><div class="container"><p class="copyright"><?php echo esc_html(get_theme_mod('fxt_copyright', '© ' . date('Y') . ' FX Trading Today. All rights reserved.')); ?></p></div></div>
 </footer>
 <button class="back-to-top" id="back-to-top">↑</button>
