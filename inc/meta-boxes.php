@@ -3,9 +3,8 @@
  * Meta Boxes - Custom Fields cho Broker
  * 
  * FIX 1: Thêm 'classic-editor' support để Gutenberg không block meta box
- * FIX 2: Lưu pros/cons dùng wp_kses_post thay vì sanitize_text_field
- *         để giữ line breaks
- * NEW: Thêm Broker Sections (tabs, per-section pros/cons, collapsible details)
+ * FIX 2: Lưu pros/cons dùng sanitize_textarea_field để giữ line breaks
+ * NEW: Broker Sections với wp_editor() cho content & hidden detail
  * 
  * @package FXTradingToday
  */
@@ -46,7 +45,7 @@ add_filter('use_block_editor_for_post_type', function ($use_block_editor, $post_
 }, 10, 2);
 
 /**
- * Render HTML cho meta box chính
+ * Render HTML cho meta box chính (không đổi)
  */
 function fxt_broker_meta_box_html($post) {
     wp_nonce_field('fxt_broker_meta', 'fxt_broker_meta_nonce');
@@ -85,21 +84,18 @@ function fxt_broker_meta_box_html($post) {
                        value="<?php echo esc_attr($fields['rating']); ?>"
                        min="0" max="10" step="0.1" placeholder="8.5">
             </div>
-
             <div class="fxt-meta-field">
                 <label for="fxt_spread">📊 Spread (pips)</label>
                 <input type="text" id="fxt_spread" name="fxt_spread"
                        value="<?php echo esc_attr($fields['spread']); ?>"
                        placeholder="Từ 0.0 pips">
             </div>
-
             <div class="fxt-meta-field">
                 <label for="fxt_leverage">📈 Maximum Leverage</label>
                 <input type="text" id="fxt_leverage" name="fxt_leverage"
                        value="<?php echo esc_attr($fields['leverage']); ?>"
                        placeholder="1:2000">
             </div>
-
             <div class="fxt-meta-field">
                 <label for="fxt_min_deposit">💰 Minimum Deposit</label>
                 <input type="text" id="fxt_min_deposit" name="fxt_min_deposit"
@@ -107,7 +103,6 @@ function fxt_broker_meta_box_html($post) {
                        placeholder="$1">
             </div>
         </div>
-
         <div>
             <div class="fxt-meta-field">
                 <label for="fxt_regulation">🏛 Regulation</label>
@@ -115,21 +110,18 @@ function fxt_broker_meta_box_html($post) {
                        value="<?php echo esc_attr($fields['regulation']); ?>"
                        placeholder="FCA, CySEC, ASIC...">
             </div>
-
             <div class="fxt-meta-field">
                 <label for="fxt_founded">📅 Year Founded</label>
                 <input type="text" id="fxt_founded" name="fxt_founded"
                        value="<?php echo esc_attr($fields['founded']); ?>"
                        placeholder="2008">
             </div>
-
             <div class="fxt-meta-field">
                 <label for="fxt_platforms">🖥 Trading Platforms</label>
                 <input type="text" id="fxt_platforms" name="fxt_platforms"
                        value="<?php echo esc_attr($fields['platforms']); ?>"
                        placeholder="MT4, MT5, cTrader...">
             </div>
-
             <div class="fxt-meta-field">
                 <label for="fxt_affiliate_link">🔗 Affiliate Link</label>
                 <input type="url" id="fxt_affiliate_link" name="fxt_affiliate_link"
@@ -159,13 +151,15 @@ function fxt_broker_meta_box_html($post) {
                   placeholder="Phí qua đêm cao&#10;Không có bonus"><?php echo esc_textarea($fields['cons']); ?></textarea>
         <p class="fxt-meta-hint">Press Enter to add each disadvantage. Each line = 1 bullet point on the website.</p>
     </div>
-
     <?php
 }
 
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  BROKER SECTIONS META BOX — wp_editor() cho content fields   ║
+// ╚═══════════════════════════════════════════════════════════════╝
+
 /**
- * Render HTML cho Broker Sections meta box
- * Mỗi section = 1 tab trên frontend
+ * Render Broker Sections meta box
  */
 function fxt_broker_sections_meta_box_html($post) {
     $sections = get_post_meta($post->ID, '_fxt_broker_sections', true);
@@ -174,39 +168,77 @@ function fxt_broker_sections_meta_box_html($post) {
 
     <style>
         .fxt-sections-wrap { margin-top: 10px; }
-        .fxt-section-item { background: #f9fafb; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 16px; position: relative; }
-        .fxt-section-item .fxt-section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; cursor: move; }
-        .fxt-section-item .fxt-section-number { background: #2271b1; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
-        .fxt-section-item .fxt-remove-section { position: absolute; top: 12px; right: 12px; background: #d63638; color: #fff; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 12px; }
-        .fxt-section-item .fxt-remove-section:hover { background: #b32d2e; }
+        .fxt-section-item {
+            background: #f9fafb; border: 1px solid #ddd; border-radius: 8px;
+            padding: 20px; margin-bottom: 16px; position: relative;
+        }
+        .fxt-section-item.fxt-collapsed .fxt-section-body { display: none; }
+        .fxt-section-header {
+            display: flex; align-items: center; gap: 12px; cursor: pointer;
+            user-select: none;
+        }
+        .fxt-section-header:hover { opacity: .85; }
+        .fxt-section-number {
+            background: #2271b1; color: #fff; width: 28px; height: 28px;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0;
+        }
+        .fxt-section-toggle {
+            margin-left: auto; font-size: 18px; color: #666;
+            transition: transform .2s;
+        }
+        .fxt-collapsed .fxt-section-toggle { transform: rotate(-90deg); }
+        .fxt-remove-section {
+            position: absolute; top: 12px; right: 12px; background: #d63638;
+            color: #fff; border: none; border-radius: 4px; padding: 4px 10px;
+            cursor: pointer; font-size: 12px; z-index: 2;
+        }
+        .fxt-remove-section:hover { background: #b32d2e; }
         .fxt-section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .fxt-section-field { margin-bottom: 10px; }
-        .fxt-section-field label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px; color: #1e3a5f; }
+        .fxt-section-field > label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 13px; color: #1e3a5f; }
         .fxt-section-field input,
         .fxt-section-field textarea,
         .fxt-section-field select { width: 100%; padding: 6px 10px; border: 1px solid #ccd0d4; border-radius: 4px; font-size: 13px; }
         .fxt-section-field textarea { min-height: 80px; }
         .fxt-section-field input:focus,
         .fxt-section-field textarea:focus { border-color: #2271b1; outline: none; }
-        .fxt-section-proscons { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 14px; margin-top: 8px; }
+        .fxt-section-proscons {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 6px;
+            padding: 14px; margin-top: 8px;
+        }
         .fxt-section-proscons h5 { margin: 0 0 8px; font-size: 13px; color: #1e3a5f; }
         .fxt-add-section { margin-top: 12px; }
         .fxt-section-hint { font-size: 11px; color: #888; margin-top: 3px; font-style: italic; }
         .fxt-section-full { grid-column: 1 / -1; }
         .fxt-checkbox-field { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
         .fxt-checkbox-field input[type="checkbox"] { width: auto; }
+        .fxt-editor-wrap { margin-top: 6px; }
+        .fxt-editor-wrap .wp-editor-wrap { border: 1px solid #ccd0d4; border-radius: 4px; }
+        .fxt-collapsible-box {
+            margin-top: 12px; background: #fff; border: 1px solid #e0e0e0;
+            border-radius: 6px; padding: 14px;
+        }
+        .fxt-collapsible-box h5 { margin: 0 0 8px; font-size: 13px; color: #1e3a5f; }
+        .fxt-section-body { margin-top: 16px; }
+        /* Loading state for AJAX */
+        .fxt-section-loading {
+            text-align: center; padding: 30px; color: #666; font-style: italic;
+        }
+        .fxt-section-loading .spinner { float: none; display: inline-block; visibility: visible; }
     </style>
 
     <p style="margin-bottom:16px; color:#555;">
-        Mỗi section sẽ hiển thị dưới dạng <strong>tab ngang</strong> ở đầu trang broker.
-        Click vào tab → cuộn tới nội dung. Mỗi section có thể có <strong>Pros/Cons riêng</strong> và <strong>nội dung ẩn/hiện</strong>.
+        Mỗi section = 1 <strong>tab ngang</strong> ở đầu trang broker. Click tab → cuộn tới nội dung.
+        Section Content và Hidden Detail sử dụng <strong>WordPress Editor</strong> đầy đủ (headings, lists, media, v.v.).
+        <br><em>💡 Click vào tiêu đề section để thu gọn/mở rộng.</em>
     </p>
 
     <div class="fxt-sections-wrap" id="fxt-sections-wrap">
         <?php
         if (!empty($sections)):
             foreach ($sections as $i => $sec):
-                fxt_render_section_fields($i, $sec);
+                fxt_render_section_fields_with_editor($i, $sec);
             endforeach;
         endif;
         ?>
@@ -216,49 +248,164 @@ function fxt_broker_sections_meta_box_html($post) {
         ➕ Add New Section
     </button>
 
-    <!-- Template ẩn cho JS clone -->
-    <script type="text/html" id="fxt-section-template">
-        <?php fxt_render_section_fields('__INDEX__', []); ?>
-    </script>
-
     <script>
     (function(){
         var wrap = document.getElementById('fxt-sections-wrap');
         var addBtn = document.getElementById('fxt-add-section');
-        var template = document.getElementById('fxt-section-template').innerHTML;
 
         function getNextIndex() {
             var items = wrap.querySelectorAll('.fxt-section-item');
-            return items.length;
+            var maxIdx = -1;
+            items.forEach(function(item) {
+                var idx = parseInt(item.getAttribute('data-index'), 10);
+                if (idx > maxIdx) maxIdx = idx;
+            });
+            return maxIdx + 1;
         }
 
         function reindex() {
             var items = wrap.querySelectorAll('.fxt-section-item');
-            items.forEach(function(item, idx) {
-                item.querySelector('.fxt-section-number').textContent = (idx + 1);
-                // Update all input/textarea/select names
-                item.querySelectorAll('[name]').forEach(function(el) {
-                    el.name = el.name.replace(/fxt_sections\[\d+\]/, 'fxt_sections[' + idx + ']');
-                });
+            items.forEach(function(item, visualIdx) {
+                item.querySelector('.fxt-section-number').textContent = (visualIdx + 1);
             });
         }
 
+        // ── Add New Section via AJAX ──
         addBtn.addEventListener('click', function() {
             var idx = getNextIndex();
-            var html = template.replace(/__INDEX__/g, idx);
-            var div = document.createElement('div');
-            div.innerHTML = html.trim();
-            var newItem = div.firstElementChild;
-            wrap.appendChild(newItem);
-            bindRemove(newItem);
-            reindex();
+            addBtn.disabled = true;
+            addBtn.textContent = '⏳ Loading editor...';
+
+            // Tạo placeholder
+            var placeholder = document.createElement('div');
+            placeholder.className = 'fxt-section-item';
+            placeholder.innerHTML = '<div class="fxt-section-loading"><span class="spinner"></span> Loading WordPress Editor...</div>';
+            wrap.appendChild(placeholder);
+
+            // AJAX request lấy HTML có wp_editor() từ server
+            var formData = new FormData();
+            formData.append('action', 'fxt_add_broker_section');
+            formData.append('index', idx);
+            formData.append('nonce', '<?php echo wp_create_nonce('fxt_add_section_nonce'); ?>');
+
+            fetch(ajaxurl, {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(res) { return res.text(); })
+            .then(function(html) {
+                placeholder.outerHTML = html;
+
+                // Tìm section vừa thêm và init TinyMCE
+                var newItem = wrap.querySelector('.fxt-section-item[data-index="' + idx + '"]');
+                if (newItem) {
+                    initEditorsInSection(newItem);
+                    bindRemove(newItem);
+                    bindCollapse(newItem);
+                }
+
+                reindex();
+                addBtn.disabled = false;
+                addBtn.textContent = '➕ Add New Section';
+            })
+            .catch(function(err) {
+                console.error('Error adding section:', err);
+                placeholder.remove();
+                addBtn.disabled = false;
+                addBtn.textContent = '➕ Add New Section';
+                alert('Error adding section. Please try again.');
+            });
         });
 
+        // ── Initialize TinyMCE for textareas in a section ──
+        function initEditorsInSection(sectionEl) {
+            var textareas = sectionEl.querySelectorAll('.fxt-wp-editor-area');
+            textareas.forEach(function(ta) {
+                var editorId = ta.id;
+                if (!editorId) return;
+
+                // Khởi tạo TinyMCE
+                if (typeof tinymce !== 'undefined') {
+                    // Lấy settings từ editor mặc định hoặc tạo mới
+                    var defaultSettings = {
+                        selector: '#' + editorId,
+                        theme: 'modern',
+                        skin: 'lightgray',
+                        language: (typeof tinyMCEPreInit !== 'undefined' && tinyMCEPreInit.mceInit && tinyMCEPreInit.mceInit.content)
+                            ? tinyMCEPreInit.mceInit.content.language || ''
+                            : '',
+                        plugins: 'charmap colorpicker compat3x directionality fullscreen hr image lists media paste tabfocus textcolor wordpress wpautoresize wpdialogs wpeditimage wpemoji wpgallery wplink wptextpattern wpview',
+                        toolbar1: 'formatselect bold italic bullist numlist blockquote alignleft aligncenter alignright link unlink wp_more fullscreen',
+                        toolbar2: 'strikethrough hr forecolor pastetext removeformat charmap outdent indent undo redo wp_help',
+                        block_formats: 'Paragraph=p;Heading 2=h2;Heading 3=h3;Heading 4=h4;Heading 5=h5;Heading 6=h6;Preformatted=pre',
+                        menubar: false,
+                        wpautop: true,
+                        indent: false,
+                        relative_urls: false,
+                        remove_script_host: false,
+                        convert_urls: false,
+                        browser_spellcheck: true,
+                        fix_list_elements: true,
+                        entities: '38,amp,60,lt,62,gt',
+                        entity_encoding: 'raw',
+                        height: 250,
+                        resize: true,
+                        body_class: 'post-type-broker',
+                        setup: function(editor) {
+                            // Sync content back to textarea trước khi submit
+                            editor.on('change keyup', function() {
+                                editor.save();
+                            });
+                        }
+                    };
+
+                    // Nếu có sẵn settings từ WP, merge
+                    if (typeof tinyMCEPreInit !== 'undefined' && tinyMCEPreInit.mceInit) {
+                        var existingKeys = Object.keys(tinyMCEPreInit.mceInit);
+                        if (existingKeys.length > 0) {
+                            var ref = tinyMCEPreInit.mceInit[existingKeys[0]];
+                            for (var key in ref) {
+                                if (key !== 'selector' && key !== 'elements' && key !== 'height' && key !== 'setup') {
+                                    defaultSettings[key] = ref[key];
+                                }
+                            }
+                            defaultSettings.selector = '#' + editorId;
+                            defaultSettings.height = 250;
+                            defaultSettings.setup = function(editor) {
+                                editor.on('change keyup', function() {
+                                    editor.save();
+                                });
+                            };
+                        }
+                    }
+
+                    tinymce.init(defaultSettings);
+                }
+
+                // Quicktags
+                if (typeof quicktags !== 'undefined') {
+                    try {
+                        quicktags({ id: editorId });
+                        QTags._buttonsInit();
+                    } catch(e) {}
+                }
+            });
+        }
+
+        // ── Remove section ──
         function bindRemove(item) {
             var btn = item.querySelector('.fxt-remove-section');
             if (btn) {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     if (confirm('Remove this section?')) {
+                        // Destroy TinyMCE instances
+                        var editors = item.querySelectorAll('.fxt-wp-editor-area');
+                        editors.forEach(function(ta) {
+                            if (typeof tinymce !== 'undefined' && tinymce.get(ta.id)) {
+                                tinymce.get(ta.id).remove();
+                            }
+                        });
                         item.remove();
                         reindex();
                     }
@@ -266,8 +413,34 @@ function fxt_broker_sections_meta_box_html($post) {
             }
         }
 
-        // Bind existing
-        wrap.querySelectorAll('.fxt-section-item').forEach(bindRemove);
+        // ── Collapse/expand section ──
+        function bindCollapse(item) {
+            var header = item.querySelector('.fxt-section-header');
+            if (header) {
+                header.addEventListener('click', function(e) {
+                    // Không collapse khi click nút remove
+                    if (e.target.closest('.fxt-remove-section')) return;
+                    item.classList.toggle('fxt-collapsed');
+                });
+            }
+        }
+
+        // ── Sync TinyMCE → textarea trước khi submit form ──
+        var postForm = document.getElementById('post');
+        if (postForm) {
+            postForm.addEventListener('submit', function() {
+                if (typeof tinymce !== 'undefined') {
+                    tinymce.triggerSave();
+                }
+            });
+        }
+
+        // ── Bind existing sections ──
+        wrap.querySelectorAll('.fxt-section-item').forEach(function(item) {
+            bindRemove(item);
+            bindCollapse(item);
+        });
+
     })();
     </script>
 
@@ -275,9 +448,9 @@ function fxt_broker_sections_meta_box_html($post) {
 }
 
 /**
- * Render fields cho 1 section
+ * Render fields cho 1 section — sử dụng wp_editor()
  */
-function fxt_render_section_fields($index, $data) {
+function fxt_render_section_fields_with_editor($index, $data) {
     $title           = $data['title'] ?? '';
     $content         = $data['content'] ?? '';
     $show_proscons   = !empty($data['show_proscons']) ? '1' : '';
@@ -288,92 +461,153 @@ function fxt_render_section_fields($index, $data) {
     $show_text       = $data['show_text'] ?? '';
     $hide_text       = $data['hide_text'] ?? '';
     $num = is_numeric($index) ? ($index + 1) : '#';
+
+    // Unique editor IDs
+    $content_editor_id = 'fxt_sec_content_' . $index;
+    $detail_editor_id  = 'fxt_sec_detail_' . $index;
     ?>
-    <div class="fxt-section-item">
+    <div class="fxt-section-item" data-index="<?php echo esc_attr($index); ?>">
         <div class="fxt-section-header">
             <span class="fxt-section-number"><?php echo $num; ?></span>
             <strong style="flex:1"><?php echo $title ? esc_html($title) : 'New Section'; ?></strong>
+            <span class="fxt-section-toggle">▼</span>
         </div>
         <button type="button" class="fxt-remove-section">✕ Remove</button>
 
-        <div class="fxt-section-grid">
-            <div class="fxt-section-field">
-                <label>📌 Tab Title (hiển thị trên tab ngang)</label>
-                <input type="text" name="fxt_sections[<?php echo $index; ?>][title]"
-                       value="<?php echo esc_attr($title); ?>"
-                       placeholder="e.g. Spreads & Fees, Platforms, Safety...">
+        <div class="fxt-section-body">
+            <div class="fxt-section-grid">
+                <div class="fxt-section-field">
+                    <label>📌 Tab Title (hiển thị trên tab ngang)</label>
+                    <input type="text" name="fxt_sections[<?php echo $index; ?>][title]"
+                           value="<?php echo esc_attr($title); ?>"
+                           placeholder="e.g. Spreads & Fees, Platforms, Safety...">
+                </div>
+
+                <div class="fxt-section-field">
+                    <div class="fxt-checkbox-field">
+                        <input type="checkbox" name="fxt_sections[<?php echo $index; ?>][show_proscons]" value="1"
+                               <?php checked($show_proscons, '1'); ?>>
+                        <label>✅❌ Show Pros/Cons for this section</label>
+                    </div>
+                    <div class="fxt-checkbox-field" style="margin-top:8px">
+                        <input type="checkbox" name="fxt_sections[<?php echo $index; ?>][collapsible]" value="1"
+                               <?php checked($collapsible, '1'); ?>>
+                        <label>🔽 Make this section collapsible (show/hide detail)</label>
+                    </div>
+                </div>
             </div>
 
-            <div class="fxt-section-field">
-                <div class="fxt-checkbox-field">
-                    <input type="checkbox" name="fxt_sections[<?php echo $index; ?>][show_proscons]" value="1"
-                           <?php checked($show_proscons, '1'); ?>>
-                    <label>✅❌ Show Pros/Cons for this section</label>
-                </div>
-                <div class="fxt-checkbox-field" style="margin-top:8px">
-                    <input type="checkbox" name="fxt_sections[<?php echo $index; ?>][collapsible]" value="1"
-                           <?php checked($collapsible, '1'); ?>>
-                    <label>🔽 Make this section collapsible (show/hide detail)</label>
-                </div>
-            </div>
-
+            <!-- Section Content — WordPress Editor -->
             <div class="fxt-section-field fxt-section-full">
                 <label>📝 Section Content</label>
-                <textarea name="fxt_sections[<?php echo $index; ?>][content]" rows="6"
-                          placeholder="Nội dung chi tiết cho section này (hỗ trợ HTML)..."><?php echo esc_textarea($content); ?></textarea>
-                <p class="fxt-section-hint">HTML is supported. This content appears under the section heading.</p>
+                <div class="fxt-editor-wrap">
+                    <?php
+                    wp_editor($content, $content_editor_id, [
+                        'textarea_name' => 'fxt_sections[' . $index . '][content]',
+                        'textarea_rows' => 10,
+                        'media_buttons' => true,
+                        'teeny'         => false,
+                        'quicktags'     => true,
+                        'tinymce'       => [
+                            'toolbar1'      => 'formatselect bold italic bullist numlist blockquote alignleft aligncenter alignright link unlink wp_more fullscreen',
+                            'toolbar2'      => 'strikethrough hr forecolor pastetext removeformat charmap outdent indent undo redo wp_help',
+                            'block_formats' => 'Paragraph=p;Heading 2=h2;Heading 3=h3;Heading 4=h4;Heading 5=h5;Heading 6=h6;Preformatted=pre',
+                            'height'        => 250,
+                        ],
+                    ]);
+                    ?>
+                </div>
             </div>
-        </div>
 
-        <div class="fxt-section-proscons">
-            <h5>Pros/Cons riêng cho section này (chỉ hiện khi bật checkbox ở trên)</h5>
-            <div class="fxt-section-grid">
-                <div class="fxt-section-field">
-                    <label>✅ Pros (one per line)</label>
-                    <textarea name="fxt_sections[<?php echo $index; ?>][pros]" rows="3"
-                              placeholder="Low spread&#10;Fast execution"><?php echo esc_textarea($pros); ?></textarea>
-                </div>
-                <div class="fxt-section-field">
-                    <label>❌ Cons (one per line)</label>
-                    <textarea name="fxt_sections[<?php echo $index; ?>][cons]" rows="3"
-                              placeholder="High swap fees&#10;Limited tools"><?php echo esc_textarea($cons); ?></textarea>
+            <!-- Per-section Pros/Cons -->
+            <div class="fxt-section-proscons">
+                <h5>Pros/Cons riêng cho section này (chỉ hiện khi bật checkbox ở trên)</h5>
+                <div class="fxt-section-grid">
+                    <div class="fxt-section-field">
+                        <label>✅ Pros (one per line)</label>
+                        <textarea name="fxt_sections[<?php echo $index; ?>][pros]" rows="3"
+                                  placeholder="Low spread&#10;Fast execution"><?php echo esc_textarea($pros); ?></textarea>
+                    </div>
+                    <div class="fxt-section-field">
+                        <label>❌ Cons (one per line)</label>
+                        <textarea name="fxt_sections[<?php echo $index; ?>][cons]" rows="3"
+                                  placeholder="High swap fees&#10;Limited tools"><?php echo esc_textarea($cons); ?></textarea>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div style="margin-top:12px; background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:14px;">
-            <h5 style="margin:0 0 8px; font-size:13px; color:#1e3a5f;">🔽 Collapsible Detail (chỉ hiện khi bật checkbox)</h5>
-            <div class="fxt-section-field">
-                <label>Hidden detail content (hiện khi click "Show more")</label>
-                <textarea name="fxt_sections[<?php echo $index; ?>][collapse_detail]" rows="4"
-                          placeholder="Nội dung chi tiết ẩn, hiện khi user click expand..."><?php echo esc_textarea($collapse_detail); ?></textarea>
-                <p class="fxt-section-hint">HTML is supported. This content is hidden by default and shown when user clicks.</p>
-            </div>
-            <div class="fxt-section-grid">
+            <!-- Collapsible Detail — WordPress Editor -->
+            <div class="fxt-collapsible-box">
+                <h5>🔽 Collapsible Detail (chỉ hiện khi bật checkbox)</h5>
                 <div class="fxt-section-field">
-                    <label>Text "Show more" button</label>
-                    <input type="text" name="fxt_sections[<?php echo $index; ?>][show_text]"
-                           value="<?php echo esc_attr($show_text); ?>"
-                           placeholder="Leave empty to use default from Customizer">
+                    <label>Hidden detail content (hiện khi click "Show more")</label>
+                    <div class="fxt-editor-wrap">
+                        <?php
+                        wp_editor($collapse_detail, $detail_editor_id, [
+                            'textarea_name' => 'fxt_sections[' . $index . '][collapse_detail]',
+                            'textarea_rows' => 8,
+                            'media_buttons' => true,
+                            'teeny'         => false,
+                            'quicktags'     => true,
+                            'tinymce'       => [
+                                'toolbar1'      => 'formatselect bold italic bullist numlist blockquote alignleft aligncenter alignright link unlink fullscreen',
+                                'toolbar2'      => 'strikethrough hr forecolor pastetext removeformat charmap outdent indent undo redo',
+                                'block_formats' => 'Paragraph=p;Heading 2=h2;Heading 3=h3;Heading 4=h4;Heading 5=h5;Heading 6=h6;Preformatted=pre',
+                                'height'        => 200,
+                            ],
+                        ]);
+                        ?>
+                    </div>
                 </div>
-                <div class="fxt-section-field">
-                    <label>Text "Show less" button</label>
-                    <input type="text" name="fxt_sections[<?php echo $index; ?>][hide_text]"
-                           value="<?php echo esc_attr($hide_text); ?>"
-                           placeholder="Leave empty to use default from Customizer">
+                <div class="fxt-section-grid">
+                    <div class="fxt-section-field">
+                        <label>Text "Show more" button</label>
+                        <input type="text" name="fxt_sections[<?php echo $index; ?>][show_text]"
+                               value="<?php echo esc_attr($show_text); ?>"
+                               placeholder="Leave empty to use default from Customizer">
+                    </div>
+                    <div class="fxt-section-field">
+                        <label>Text "Show less" button</label>
+                        <input type="text" name="fxt_sections[<?php echo $index; ?>][hide_text]"
+                               value="<?php echo esc_attr($hide_text); ?>"
+                               placeholder="Leave empty to use default from Customizer">
+                    </div>
                 </div>
             </div>
-        </div>
+
+        </div><!-- .fxt-section-body -->
     </div>
     <?php
 }
 
-/**
- * Lưu meta data khi save post
- */
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  AJAX Handler: Thêm section mới (trả về HTML có wp_editor)  ║
+// ╚═══════════════════════════════════════════════════════════════╝
+
+add_action('wp_ajax_fxt_add_broker_section', function () {
+    check_ajax_referer('fxt_add_section_nonce', 'nonce');
+
+    if (!current_user_can('edit_posts')) {
+        wp_die('Unauthorized');
+    }
+
+    $index = intval($_POST['index'] ?? 0);
+
+    // Bật output buffering vì wp_editor() print trực tiếp
+    ob_start();
+    fxt_render_section_fields_with_editor($index, []);
+    $html = ob_get_clean();
+
+    echo $html;
+    wp_die();
+});
+
+// ╔═══════════════════════════════════════════════════════════════╗
+// ║  SAVE META DATA                                              ║
+// ╚═══════════════════════════════════════════════════════════════╝
+
 add_action('save_post_broker', function ($post_id) {
 
-    // Kiểm tra nonce
     if (!isset($_POST['fxt_broker_meta_nonce']) ||
         !wp_verify_nonce($_POST['fxt_broker_meta_nonce'], 'fxt_broker_meta')) {
         return;
@@ -384,20 +618,18 @@ add_action('save_post_broker', function ($post_id) {
 
     // Text fields
     $text_fields = [
-        'fxt_rating'         => '_fxt_rating',
-        'fxt_spread'         => '_fxt_spread',
-        'fxt_leverage'       => '_fxt_leverage',
-        'fxt_min_deposit'    => '_fxt_min_deposit',
-        'fxt_regulation'     => '_fxt_regulation',
-        'fxt_founded'        => '_fxt_founded',
-        'fxt_platforms'      => '_fxt_platforms',
+        'fxt_rating'      => '_fxt_rating',
+        'fxt_spread'      => '_fxt_spread',
+        'fxt_leverage'    => '_fxt_leverage',
+        'fxt_min_deposit' => '_fxt_min_deposit',
+        'fxt_regulation'  => '_fxt_regulation',
+        'fxt_founded'     => '_fxt_founded',
+        'fxt_platforms'   => '_fxt_platforms',
     ];
-
     $textarea_fields = [
-        'fxt_pros'           => '_fxt_pros',
-        'fxt_cons'           => '_fxt_cons',
+        'fxt_pros' => '_fxt_pros',
+        'fxt_cons' => '_fxt_cons',
     ];
-
     $url_fields = [
         'fxt_affiliate_link' => '_fxt_affiliate_link',
         'fxt_website_url'    => '_fxt_website_url',
@@ -408,13 +640,11 @@ add_action('save_post_broker', function ($post_id) {
             update_post_meta($post_id, $meta_key, sanitize_text_field($_POST[$form_key]));
         }
     }
-
     foreach ($textarea_fields as $form_key => $meta_key) {
         if (isset($_POST[$form_key])) {
             update_post_meta($post_id, $meta_key, sanitize_textarea_field($_POST[$form_key]));
         }
     }
-
     foreach ($url_fields as $form_key => $meta_key) {
         if (isset($_POST[$form_key])) {
             update_post_meta($post_id, $meta_key, esc_url_raw($_POST[$form_key]));
@@ -425,6 +655,9 @@ add_action('save_post_broker', function ($post_id) {
     if (isset($_POST['fxt_sections']) && is_array($_POST['fxt_sections'])) {
         $sections = [];
         foreach ($_POST['fxt_sections'] as $sec) {
+            // Bỏ qua section trống (không có title)
+            if (empty($sec['title']) && empty($sec['content'])) continue;
+
             $sections[] = [
                 'title'           => sanitize_text_field($sec['title'] ?? ''),
                 'content'         => wp_kses_post($sec['content'] ?? ''),
@@ -468,8 +701,7 @@ function fxt_get_broker_meta($post_id) {
 function fxt_get_broker_sections($post_id) {
     $sections = get_post_meta($post_id, '_fxt_broker_sections', true);
     if (!is_array($sections)) return [];
-    
-    // Process pros/cons thành arrays
+
     foreach ($sections as &$sec) {
         $sec['pros_arr'] = array_filter(array_map('trim', explode("\n", $sec['pros'] ?? '')));
         $sec['cons_arr'] = array_filter(array_map('trim', explode("\n", $sec['cons'] ?? '')));
