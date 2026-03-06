@@ -3,7 +3,7 @@ Theme Name: FX Trading Today
 Theme URI: https://fxtradingtoday.com
 Author: Timo
 Description: Custom WordPress theme cho forex affiliate blog.
-Version: 2.0.3
+Version: 2.0.4
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
@@ -501,4 +501,154 @@ table{border-collapse:collapse;border-spacing:0}
 @media print{
     .site-header,.site-footer,.sidebar,.share-buttons,.back-to-top,.inline-cta,.bottom-cta-box,.mobile-menu-overlay{display:none!important}
     .layout-with-sidebar{grid-template-columns:1fr}
+}
+
+/* ╔═══════════════════════════════════════════════════╗
+   ║  PHẦN 18: BROKER TABS & SECTIONS                 ║
+   ╚═══════════════════════════════════════════════════╝ */
+
+/* ── Horizontal Tab Navigation ─────────────────────── */
+.broker-tabs-wrapper {
+    position: sticky;
+    top: var(--header-h);
+    z-index: 99;
+    background: var(--c-bg);
+    border-bottom: 1px solid var(--c-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+body.admin-bar .broker-tabs-wrapper {
+    top: calc(var(--header-h) + 32px);
+}
+@media screen and (max-width: 782px) {
+    body.admin-bar .broker-tabs-wrapper {
+        top: calc(var(--header-h) + 46px);
+    }
+}
+.broker-tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+}
+.broker-tabs::-webkit-scrollbar {
+    display: none;
+}
+.broker-tab {
+    flex-shrink: 0;
+    padding: 14px 20px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--c-text-2);
+    text-decoration: none;
+    border-bottom: 3px solid transparent;
+    transition: all .2s;
+    white-space: nowrap;
+}
+.broker-tab:hover {
+    color: var(--c-primary);
+    background: var(--c-primary-light);
+}
+.broker-tab.active {
+    color: var(--c-primary);
+    border-bottom-color: var(--c-primary);
+}
+
+/* ── Broker Section Block ──────────────────────────── */
+.broker-section {
+    padding: 40px 0 32px;
+    border-bottom: 1px solid var(--c-border-light);
+    scroll-margin-top: calc(var(--header-h) + 60px);
+}
+body.admin-bar .broker-section {
+    scroll-margin-top: calc(var(--header-h) + 92px);
+}
+.broker-section:last-of-type {
+    border-bottom: none;
+}
+.broker-section-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--c-text);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--c-primary-light);
+    position: relative;
+}
+.broker-section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 60px;
+    height: 2px;
+    background: var(--c-primary);
+}
+.broker-section-content {
+    margin-bottom: 24px;
+}
+
+/* ── Per-Section Pros/Cons ─────────────────────────── */
+.broker-section-proscons {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* ── Collapsible Detail ────────────────────────────── */
+.broker-section-collapsible {
+    margin-top: 16px;
+}
+.broker-section-detail {
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+.broker-section-detail-content {
+    padding: 20px 24px;
+    background: var(--c-bg-alt);
+    border: 1px solid var(--c-border-light);
+    border-radius: var(--r-md);
+    margin-bottom: 12px;
+}
+.broker-toggle-detail {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-sm);
+    font-family: var(--font);
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--c-primary);
+    cursor: pointer;
+    transition: all .25s;
+    width: 100%;
+    justify-content: center;
+}
+.broker-toggle-detail:hover {
+    background: var(--c-primary-light);
+    border-color: var(--c-primary);
+}
+.broker-toggle-detail.expanded {
+    background: var(--c-primary-light);
+    border-color: var(--c-primary);
+}
+
+/* ── Responsive for tabs ───────────────────────────── */
+@media (max-width: 768px) {
+    .broker-tab {
+        padding: 12px 16px;
+        font-size: .8rem;
+    }
+    .broker-section {
+        padding: 32px 0 24px;
+    }
+    .broker-section-title {
+        font-size: 1.15rem;
+    }
+    .broker-section-proscons .broker-pros-cons {
+        grid-template-columns: 1fr;
+    }
 }

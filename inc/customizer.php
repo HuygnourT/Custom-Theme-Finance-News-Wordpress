@@ -1,11 +1,9 @@
 <?php
 /**
- * Theme Customizer v2.1
+ * Theme Customizer v2.2
  * TẤT CẢ text đều custom được từ Appearance → Customize
- * Nội dung lưu trong database (wp_options) → update theme không mất
  * 
- * UPDATED: Thêm settings cho footer links, breadcrumbs, broker comparison,
- *          search results, tags label
+ * UPDATED: Thêm settings cho broker sections (tabs, collapsible, show/hide text)
  */
 if (!defined('ABSPATH')) exit;
 
@@ -88,6 +86,9 @@ add_action('customize_register', function ($wp_customize) {
         'fxt_label_platforms'  => ['Label: Platform', 'Platform'],
         'fxt_label_founded'    => ['Label: Founded Year', 'Founded Year'],
         'fxt_label_website'    => ['Label: Website', 'Website'],
+        // Section collapsible labels
+        'fxt_broker_section_show' => ['Default "Show detail" text', '▼ Show details'],
+        'fxt_broker_section_hide' => ['Default "Hide detail" text', '▲ Hide details'],
     ];
 
     foreach ($broker_fields as $id => [$label, $default]) {
@@ -219,14 +220,12 @@ add_action('customize_register', function ($wp_customize) {
     $wp_customize->add_setting('fxt_footer_about', ['default' => 'Providing trusted Forex education, broker reviews, and trading strategies for investors.', 'sanitize_callback' => 'sanitize_text_field']);
     $wp_customize->add_control('fxt_footer_about', ['label' => 'Short Description', 'section' => 'fxt_footer', 'type' => 'textarea']);
 
-    // Footer column titles
     $wp_customize->add_setting('fxt_footer_col2_title', ['default' => 'Quick Links', 'sanitize_callback' => 'sanitize_text_field']);
     $wp_customize->add_control('fxt_footer_col2_title', ['label' => 'Title column 2 (Quick Links / Categories)', 'section' => 'fxt_footer', 'type' => 'text']);
 
     $wp_customize->add_setting('fxt_footer_col3_title', ['default' => 'More information', 'sanitize_callback' => 'sanitize_text_field']);
     $wp_customize->add_control('fxt_footer_col3_title', ['label' => 'Title column 3', 'section' => 'fxt_footer', 'type' => 'text']);
 
-    // Footer link labels
     $footer_link_fields = [
         'fxt_footer_link_about'      => ['Link text: About Us', 'About Us'],
         'fxt_footer_about_slug'      => ['Page slug: About Us', 'about-us'],
@@ -252,7 +251,6 @@ add_action('customize_register', function ($wp_customize) {
 
 /**
  * Helper: Lấy customizer value nhanh
- * Dùng: fxt_text('fxt_hero_title')
  */
 function fxt_text($key, $fallback = '') {
     return get_theme_mod($key, $fallback);
