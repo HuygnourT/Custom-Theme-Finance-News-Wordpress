@@ -53,7 +53,7 @@ if (!empty($sections)):
 
         <!-- Overview / Specs Table -->
         <div class="broker-specs-table">
-            <h2 class="specs-title"><?php echo esc_html(get_theme_mod('fxt_broker_overview', 'Thông tin tổng quan')); ?></h2>
+            <h2 class="specs-title"><?php echo esc_html(get_theme_mod('fxt_broker_overview', 'Overview')); ?></h2>
             <table class="specs-table">
                 <?php
                 $specs = [
@@ -184,7 +184,7 @@ if (!empty($sections)):
         <div class="bottom-cta-box">
             <h3><?php echo esc_html(str_replace('{name}', get_the_title(), get_theme_mod('fxt_broker_cta_ready', 'Are you ready to trade with {name}?'))); ?></h3>
             <p><?php echo esc_html(get_theme_mod('fxt_broker_cta_desc', 'Open an account in just a few minutes and start trading today.')); ?></p>
-            <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Bắt đầu ngay →')); ?></a>
+            <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Get Started →')); ?></a>
         </div>
     </div>
 

@@ -1,8 +1,9 @@
 <?php
 /**
- * Theme Customizer v2.2
+ * Theme Customizer v2.3
  * TẤT CẢ text đều custom được từ Appearance → Customize
  * 
+ * UPDATED: Thêm Permalink settings cho broker slug
  * UPDATED: Thêm settings cho broker sections (tabs, collapsible, show/hide text)
  */
 if (!defined('ABSPATH')) exit;
@@ -118,6 +119,39 @@ add_action('customize_register', function ($wp_customize) {
         $wp_customize->add_setting($id, ['default' => $default, 'sanitize_callback' => 'sanitize_text_field']);
         $wp_customize->add_control($id, ['label' => $label, 'section' => 'fxt_broker_compare', 'type' => 'text']);
     }
+
+    // ╔═══════════════════════════════════════════════╗
+    // ║  3c. BROKER PERMALINKS                        ║
+    // ╚═══════════════════════════════════════════════╝
+    $wp_customize->add_section('fxt_broker_permalinks', [
+        'title'       => '🔗 Broker Permalinks',
+        'description' => '⚠️ After changing slugs, go to Settings → Permalinks and click "Save Changes" to flush rewrite rules.',
+        'priority'    => 27,
+    ]);
+
+    $wp_customize->add_setting('fxt_broker_slug', [
+        'default'           => 'broker-review',
+        'sanitize_callback' => 'sanitize_title',
+        'transport'         => 'postMessage',
+    ]);
+    $wp_customize->add_control('fxt_broker_slug', [
+        'label'       => 'Broker Single Slug',
+        'description' => 'URL: yoursite.com/<strong>{slug}</strong>/broker-name/<br>Example: broker-review, danh-gia, review',
+        'section'     => 'fxt_broker_permalinks',
+        'type'        => 'text',
+    ]);
+
+    $wp_customize->add_setting('fxt_broker_type_slug', [
+        'default'           => 'broker-type',
+        'sanitize_callback' => 'sanitize_title',
+        'transport'         => 'postMessage',
+    ]);
+    $wp_customize->add_control('fxt_broker_type_slug', [
+        'label'       => 'Broker Category Slug',
+        'description' => 'URL: yoursite.com/<strong>{slug}</strong>/category-name/<br>Example: broker-type, loai-broker',
+        'section'     => 'fxt_broker_permalinks',
+        'type'        => 'text',
+    ]);
 
     // ╔═══════════════════════════════════════════════╗
     // ║  4. UI LABELS (General)                       ║

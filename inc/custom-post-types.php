@@ -18,6 +18,9 @@ if (!defined('ABSPATH')) exit;
  */
 add_action('init', function () {
 
+    // Lấy slug từ Customizer (có thể thay đổi từ WP Admin)
+    $broker_slug = get_theme_mod('fxt_broker_slug', 'broker-review');
+
     $labels = [
         'name'               => 'Brokers',
         'singular_name'      => 'Broker',
@@ -45,7 +48,7 @@ add_action('init', function () {
         'capability_type'    => 'post',
         'has_archive'        => 'brokers',               // URL archive: /brokers/
         'rewrite'            => [
-            'slug'       => 'danh-gia',                  // URL: /danh-gia/ten-broker/
+            'slug'       => sanitize_title($broker_slug), // Customizable slug
             'with_front' => false,
         ],
         'supports'           => [
@@ -67,6 +70,9 @@ add_action('init', function () {
  */
 add_action('init', function () {
 
+    // Lấy slug từ Customizer
+    $broker_type_slug = get_theme_mod('fxt_broker_type_slug', 'broker-type');
+
     $labels = [
         'name'          => 'Loại Broker',
         'singular_name' => 'Loại Broker',
@@ -84,15 +90,22 @@ add_action('init', function () {
         'show_in_rest'      => true,
         'show_admin_column' => true,          // Hiển thị cột trong admin list
         'rewrite'           => [
-            'slug' => 'loai-broker',
+            'slug' => sanitize_title($broker_type_slug),
         ],
     ]);
 });
 
 /**
  * Flush rewrite rules khi activate theme
- * (Cần thiết để URL /danh-gia/xxx hoạt động)
+ * (Cần thiết để URL /broker-review/xxx hoạt động)
  */
 add_action('after_switch_theme', function () {
+    flush_rewrite_rules();
+});
+
+/**
+ * Auto flush rewrite rules khi slug thay đổi trong Customizer
+ */
+add_action('customize_save_after', function () {
     flush_rewrite_rules();
 });
