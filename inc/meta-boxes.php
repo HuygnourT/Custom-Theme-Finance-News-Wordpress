@@ -4,8 +4,10 @@
  * 
  * FIX 1: Thêm 'classic-editor' support để Gutenberg không block meta box
  * FIX 2: Lưu pros/cons dùng sanitize_textarea_field để giữ line breaks
- * NEW: Broker Sections với wp_editor() cho content & hidden detail
- * FIX 3: TinyMCE không hiện nội dung ở Visual tab cho existing sections
+ * NEW: Broker Sections với TinyMCE cho content & hidden detail
+ * FIX 3: KHÔNG dùng wp_editor() cho sections — render textarea thuần
+ *         rồi init TinyMCE hoàn toàn bằng JS để tránh WP init conflict.
+ *         Đây là fix triệt để cho lỗi Visual tab trống.
  * 
  * @package FXTradingToday
  */
@@ -156,7 +158,9 @@ function fxt_broker_meta_box_html($post) {
 }
 
 // ╔═══════════════════════════════════════════════════════════════╗
-// ║  BROKER SECTIONS META BOX — wp_editor() cho content fields   ║
+// ║  BROKER SECTIONS META BOX                                    ║
+// ║  FIX: Dùng textarea thuần + JS init TinyMCE                 ║
+// ║  KHÔNG dùng wp_editor() để tránh WP init conflict            ║
 // ╚═══════════════════════════════════════════════════════════════╝
 
 /**
@@ -210,28 +214,50 @@ function fxt_broker_sections_meta_box_html($post) {
         }
         .fxt-section-proscons h5 { margin: 0 0 8px; font-size: 13px; color: #1e3a5f; }
         .fxt-add-section { margin-top: 12px; }
-        .fxt-section-hint { font-size: 11px; color: #888; margin-top: 3px; font-style: italic; }
         .fxt-section-full { grid-column: 1 / -1; }
         .fxt-checkbox-field { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
         .fxt-checkbox-field input[type="checkbox"] { width: auto; }
-        .fxt-editor-wrap { margin-top: 6px; }
-        .fxt-editor-wrap .wp-editor-wrap { border: 1px solid #ccd0d4; border-radius: 4px; }
         .fxt-collapsible-box {
             margin-top: 12px; background: #fff; border: 1px solid #e0e0e0;
             border-radius: 6px; padding: 14px;
         }
         .fxt-collapsible-box h5 { margin: 0 0 8px; font-size: 13px; color: #1e3a5f; }
         .fxt-section-body { margin-top: 16px; }
-        /* Loading state for AJAX */
-        .fxt-section-loading {
-            text-align: center; padding: 30px; color: #666; font-style: italic;
+
+        /* Editor styling */
+        .fxt-editor-wrap { margin-top: 6px; }
+        .fxt-editor-wrap textarea.fxt-rich-editor {
+            width: 100%; min-height: 250px; padding: 10px;
+            border: none; font-family: monospace; font-size: 13px; line-height: 1.6;
+            display: block;
         }
-        .fxt-section-loading .spinner { float: none; display: inline-block; visibility: visible; }
+        .fxt-editor-wrap textarea.fxt-rich-editor-small { min-height: 180px; }
+        .fxt-editor-tabs {
+            display: flex; gap: 0; margin-bottom: 0;
+            position: relative; z-index: 1; background: #f0f0f1;
+            border: 1px solid #ccd0d4; border-bottom: none;
+            border-radius: 4px 4px 0 0; padding: 0;
+        }
+        .fxt-editor-tab {
+            padding: 6px 14px; font-size: 12px; font-weight: 600;
+            cursor: pointer; background: #e5e5e5; color: #50575e;
+            border-right: 1px solid #ccd0d4; user-select: none;
+            transition: background .15s;
+        }
+        .fxt-editor-tab:first-child { border-radius: 3px 0 0 0; }
+        .fxt-editor-tab:hover { background: #f6f6f6; color: #1e3a5f; }
+        .fxt-editor-tab.active { background: #fff; color: #1e3a5f; }
+        .fxt-editor-container {
+            border: 1px solid #ccd0d4; border-radius: 0 0 4px 4px;
+            background: #fff; overflow: hidden;
+        }
+        .fxt-editor-container .mce-tinymce { border: none !important; box-shadow: none !important; }
+        .fxt-editor-container .mce-top-part::before { box-shadow: none !important; }
     </style>
 
     <p style="margin-bottom:16px; color:#555;">
         Mỗi section = 1 <strong>tab ngang</strong> ở đầu trang broker. Click tab → cuộn tới nội dung.
-        Section Content và Hidden Detail sử dụng <strong>WordPress Editor</strong> đầy đủ (headings, lists, media, v.v.).
+        Section Content và Hidden Detail sử dụng <strong>Visual Editor</strong> đầy đủ (headings, lists, media, v.v.).
         <br><em>💡 Click vào tiêu đề section để thu gọn/mở rộng.</em>
     </p>
 
@@ -239,7 +265,7 @@ function fxt_broker_sections_meta_box_html($post) {
         <?php
         if (!empty($sections)):
             foreach ($sections as $i => $sec):
-                fxt_render_section_fields_with_editor($i, $sec);
+                fxt_render_section_fields($i, $sec);
             endforeach;
         endif;
         ?>
@@ -254,34 +280,30 @@ function fxt_broker_sections_meta_box_html($post) {
         var wrap = document.getElementById('fxt-sections-wrap');
         var addBtn = document.getElementById('fxt-add-section');
 
-        function getNextIndex() {
-            var items = wrap.querySelectorAll('.fxt-section-item');
-            var maxIdx = -1;
-            items.forEach(function(item) {
-                var idx = parseInt(item.getAttribute('data-index'), 10);
-                if (idx > maxIdx) maxIdx = idx;
-            });
-            return maxIdx + 1;
-        }
-
-        function reindex() {
-            var items = wrap.querySelectorAll('.fxt-section-item');
-            items.forEach(function(item, visualIdx) {
-                item.querySelector('.fxt-section-number').textContent = (visualIdx + 1);
-            });
-        }
-
         // ══════════════════════════════════════════════════════════════
-        // FIX: Shared TinyMCE settings builder
+        // TinyMCE Init — KHÔNG phụ thuộc wp_editor(), init thủ công 100%
         // ══════════════════════════════════════════════════════════════
-        function buildTinyMCESettings(editorId) {
-            var defaultSettings = {
+
+        function initTinyMCE(editorId, height) {
+            if (typeof tinymce === 'undefined') return;
+
+            var ta = document.getElementById(editorId);
+            if (!ta) return;
+
+            // Remove instance cũ nếu có
+            var existing = tinymce.get(editorId);
+            if (existing) {
+                existing.save();
+                existing.remove();
+            }
+
+            // Lưu content từ textarea trước khi init
+            var originalContent = ta.value || '';
+
+            tinymce.init({
                 selector: '#' + editorId,
                 theme: 'modern',
                 skin: 'lightgray',
-                language: (typeof tinyMCEPreInit !== 'undefined' && tinyMCEPreInit.mceInit && tinyMCEPreInit.mceInit.content)
-                    ? tinyMCEPreInit.mceInit.content.language || ''
-                    : '',
                 plugins: 'charmap colorpicker compat3x directionality fullscreen hr image lists media paste tabfocus textcolor wordpress wpautoresize wpdialogs wpeditimage wpemoji wpgallery wplink wptextpattern wpview',
                 toolbar1: 'formatselect bold italic bullist numlist blockquote alignleft aligncenter alignright link unlink wp_more fullscreen',
                 toolbar2: 'strikethrough hr forecolor pastetext removeformat charmap outdent indent undo redo wp_help',
@@ -296,150 +318,189 @@ function fxt_broker_sections_meta_box_html($post) {
                 fix_list_elements: true,
                 entities: '38,amp,60,lt,62,gt',
                 entity_encoding: 'raw',
-                height: 250,
+                height: height || 250,
                 resize: true,
                 body_class: 'post-type-broker',
+                verify_html: false,
                 setup: function(editor) {
-                    editor.on('change keyup', function() {
+                    editor.on('change keyup input NodeChange', function() {
                         editor.save();
                     });
-                }
-            };
 
-            // Nếu có sẵn settings từ WP, merge
-            if (typeof tinyMCEPreInit !== 'undefined' && tinyMCEPreInit.mceInit) {
-                var existingKeys = Object.keys(tinyMCEPreInit.mceInit);
-                if (existingKeys.length > 0) {
-                    var ref = tinyMCEPreInit.mceInit[existingKeys[0]];
-                    for (var key in ref) {
-                        if (key !== 'selector' && key !== 'elements' && key !== 'height' && key !== 'setup') {
-                            defaultSettings[key] = ref[key];
+                    // ĐÂY LÀ FIX CHÍNH: Khi editor init xong, ÉP set content từ textarea
+                    editor.on('init', function() {
+                        if (originalContent && originalContent.trim() !== '') {
+                            // Dùng setTimeout nhỏ để đảm bảo editor đã render xong
+                            setTimeout(function() {
+                                editor.setContent(originalContent);
+                                editor.undoManager.clear();
+                                editor.undoManager.add();
+                            }, 50);
                         }
-                    }
-                    defaultSettings.selector = '#' + editorId;
-                    defaultSettings.height = 250;
-                    defaultSettings.setup = function(editor) {
-                        editor.on('change keyup', function() {
-                            editor.save();
-                        });
-                    };
-                }
-            }
-
-            return defaultSettings;
-        }
-
-        // ══════════════════════════════════════════════════════════════
-        // FIX: Reinitialize a single TinyMCE editor by ID
-        // Handles the case where WP rendered wp_editor() server-side
-        // but TinyMCE didn't properly load content into Visual tab.
-        // ══════════════════════════════════════════════════════════════
-        function reinitEditor(editorId) {
-            if (typeof tinymce === 'undefined') return;
-
-            var textarea = document.getElementById(editorId);
-            if (!textarea) return;
-
-            // Lấy nội dung từ textarea (luôn có data đúng vì Code tab hiện đúng)
-            var content = textarea.value;
-
-            // Nếu TinyMCE instance đã tồn tại nhưng Visual trống → remove và init lại
-            var existingEditor = tinymce.get(editorId);
-            if (existingEditor) {
-                // Kiểm tra xem Visual có nội dung không
-                var editorContent = existingEditor.getContent();
-                if (editorContent && editorContent.replace(/(<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>|<br\s*\/?>|\s|&nbsp;)*/gi, '').trim() !== '') {
-                    // Editor đã có nội dung, không cần reinit
-                    return;
-                }
-                // Visual trống nhưng textarea có data → remove và reinit
-                existingEditor.remove();
-            }
-
-            // Init TinyMCE mới
-            var settings = buildTinyMCESettings(editorId);
-            tinymce.init(settings).then(function(editors) {
-                if (editors && editors[0] && content) {
-                    // Đợi editor ready rồi set content
-                    editors[0].setContent(content);
+                    });
                 }
             });
-
-            // Quicktags
-            if (typeof quicktags !== 'undefined') {
-                try {
-                    quicktags({ id: editorId });
-                    if (typeof QTags !== 'undefined' && QTags._buttonsInit) {
-                        QTags._buttonsInit();
-                    }
-                } catch(e) {}
-            }
         }
 
-        // ── Initialize TinyMCE for textareas in a section (for AJAX-added sections) ──
-        function initEditorsInSection(sectionEl) {
-            var textareas = sectionEl.querySelectorAll('.fxt-wp-editor-area');
-            textareas.forEach(function(ta) {
-                var editorId = ta.id;
+        // ── Init editors trong 1 section ──
+        function initSectionEditors(sectionEl) {
+            var editorWraps = sectionEl.querySelectorAll('.fxt-editor-wrap');
+            editorWraps.forEach(function(ew) {
+                var editorId = ew.getAttribute('data-editor-id');
                 if (!editorId) return;
 
-                if (typeof tinymce !== 'undefined') {
-                    var settings = buildTinyMCESettings(editorId);
-                    tinymce.init(settings);
-                }
+                bindEditorTabs(ew);
 
-                if (typeof quicktags !== 'undefined') {
-                    try {
-                        quicktags({ id: editorId });
-                        QTags._buttonsInit();
-                    } catch(e) {}
-                }
+                var ta = document.getElementById(editorId);
+                if (ta) ta.style.display = 'none';
+
+                var h = ew.classList.contains('fxt-editor-small') ? 180 : 250;
+                initTinyMCE(editorId, h);
             });
         }
 
-        // ── Add New Section via AJAX ──
+        // ── Destroy editors trong 1 section ──
+        function destroySectionEditors(sectionEl) {
+            if (typeof tinymce === 'undefined') return;
+            sectionEl.querySelectorAll('.fxt-editor-wrap').forEach(function(ew) {
+                var editorId = ew.getAttribute('data-editor-id');
+                if (!editorId) return;
+                var ed = tinymce.get(editorId);
+                if (ed) { ed.save(); ed.remove(); }
+            });
+        }
+
+        // ── Visual/Code tab switching ──
+        function bindEditorTabs(container) {
+            var tabs = container.querySelectorAll('.fxt-editor-tab');
+            var editorId = container.getAttribute('data-editor-id');
+            if (!tabs.length || !editorId) return;
+
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    var mode = this.getAttribute('data-mode');
+                    var ta = document.getElementById(editorId);
+
+                    tabs.forEach(function(t) { t.classList.remove('active'); });
+                    this.classList.add('active');
+
+                    if (mode === 'visual') {
+                        if (typeof tinymce !== 'undefined') {
+                            var ed = tinymce.get(editorId);
+                            if (ed) {
+                                var mceWrap = container.querySelector('.mce-tinymce');
+                                if (mceWrap) mceWrap.style.display = '';
+                                if (ta) {
+                                    ed.setContent(ta.value || '');
+                                    ta.style.display = 'none';
+                                }
+                            } else {
+                                if (ta) ta.style.display = 'none';
+                                var h = container.classList.contains('fxt-editor-small') ? 180 : 250;
+                                initTinyMCE(editorId, h);
+                            }
+                        }
+                    } else {
+                        // Code mode
+                        if (typeof tinymce !== 'undefined') {
+                            var ed = tinymce.get(editorId);
+                            if (ed) {
+                                ed.save();
+                                var mceWrap = container.querySelector('.mce-tinymce');
+                                if (mceWrap) mceWrap.style.display = 'none';
+                            }
+                        }
+                        if (ta) {
+                            ta.style.display = '';
+                            ta.style.width = '100%';
+                            ta.style.minHeight = container.classList.contains('fxt-editor-small') ? '180px' : '250px';
+                            ta.style.padding = '10px';
+                            ta.style.fontFamily = 'monospace';
+                            ta.style.fontSize = '13px';
+                            ta.style.border = 'none';
+                        }
+                    }
+                });
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // Section management
+        // ══════════════════════════════════════════════════════════════
+
+        function getNextIndex() {
+            var items = wrap.querySelectorAll('.fxt-section-item');
+            var maxIdx = -1;
+            items.forEach(function(item) {
+                var idx = parseInt(item.getAttribute('data-index'), 10);
+                if (idx > maxIdx) maxIdx = idx;
+            });
+            return maxIdx + 1;
+        }
+
+        function reindex() {
+            wrap.querySelectorAll('.fxt-section-item').forEach(function(item, i) {
+                item.querySelector('.fxt-section-number').textContent = (i + 1);
+            });
+        }
+
+        // ── Add New Section (client-side, no AJAX needed) ──
         addBtn.addEventListener('click', function() {
             var idx = getNextIndex();
-            addBtn.disabled = true;
-            addBtn.textContent = '⏳ Loading editor...';
+            var temp = document.createElement('div');
+            temp.innerHTML = buildSectionHTML(idx);
+            var newItem = temp.firstElementChild;
+            wrap.appendChild(newItem);
 
-            var placeholder = document.createElement('div');
-            placeholder.className = 'fxt-section-item';
-            placeholder.innerHTML = '<div class="fxt-section-loading"><span class="spinner"></span> Loading WordPress Editor...</div>';
-            wrap.appendChild(placeholder);
-
-            var formData = new FormData();
-            formData.append('action', 'fxt_add_broker_section');
-            formData.append('index', idx);
-            formData.append('nonce', '<?php echo wp_create_nonce('fxt_add_section_nonce'); ?>');
-
-            fetch(ajaxurl, {
-                method: 'POST',
-                body: formData
-            })
-            .then(function(res) { return res.text(); })
-            .then(function(html) {
-                placeholder.outerHTML = html;
-
-                var newItem = wrap.querySelector('.fxt-section-item[data-index="' + idx + '"]');
-                if (newItem) {
-                    initEditorsInSection(newItem);
-                    bindRemove(newItem);
-                    bindCollapse(newItem);
-                }
-
-                reindex();
-                addBtn.disabled = false;
-                addBtn.textContent = '➕ Add New Section';
-            })
-            .catch(function(err) {
-                console.error('Error adding section:', err);
-                placeholder.remove();
-                addBtn.disabled = false;
-                addBtn.textContent = '➕ Add New Section';
-                alert('Error adding section. Please try again.');
-            });
+            initSectionEditors(newItem);
+            bindRemove(newItem);
+            bindCollapse(newItem);
+            reindex();
         });
+
+        function buildSectionHTML(index) {
+            var cId = 'fxt_sec_content_' + index;
+            var dId = 'fxt_sec_detail_' + index;
+
+            return '<div class="fxt-section-item" data-index="' + index + '">'
+            + '<div class="fxt-section-header">'
+            + '<span class="fxt-section-number">#</span>'
+            + '<strong style="flex:1">New Section</strong>'
+            + '<span class="fxt-section-toggle">\u25BC</span>'
+            + '</div>'
+            + '<button type="button" class="fxt-remove-section">\u2715 Remove</button>'
+            + '<div class="fxt-section-body">'
+            + '<div class="fxt-section-grid">'
+            + '<div class="fxt-section-field"><label>\uD83D\uDCCC Tab Title</label>'
+            + '<input type="text" name="fxt_sections[' + index + '][title]" value="" placeholder="e.g. Spreads &amp; Fees, Platforms, Safety..."></div>'
+            + '<div class="fxt-section-field">'
+            + '<div class="fxt-checkbox-field"><input type="checkbox" name="fxt_sections[' + index + '][show_proscons]" value="1"><label>\u2705\u274C Show Pros/Cons</label></div>'
+            + '<div class="fxt-checkbox-field" style="margin-top:8px"><input type="checkbox" name="fxt_sections[' + index + '][collapsible]" value="1"><label>\uD83D\uDD3D Collapsible</label></div>'
+            + '</div></div>'
+            // Content editor
+            + '<div class="fxt-section-field fxt-section-full"><label>\uD83D\uDCDD Section Content</label>'
+            + '<div class="fxt-editor-wrap" data-editor-id="' + cId + '">'
+            + '<div class="fxt-editor-tabs"><span class="fxt-editor-tab active" data-mode="visual">Visual</span><span class="fxt-editor-tab" data-mode="code">Code</span></div>'
+            + '<div class="fxt-editor-container"><textarea id="' + cId + '" name="fxt_sections[' + index + '][content]" class="fxt-rich-editor" rows="12"></textarea></div>'
+            + '</div></div>'
+            // Pros/Cons
+            + '<div class="fxt-section-proscons"><h5>Pros/Cons riêng cho section này</h5><div class="fxt-section-grid">'
+            + '<div class="fxt-section-field"><label>\u2705 Pros (one per line)</label><textarea name="fxt_sections[' + index + '][pros]" rows="3" placeholder="Low spread"></textarea></div>'
+            + '<div class="fxt-section-field"><label>\u274C Cons (one per line)</label><textarea name="fxt_sections[' + index + '][cons]" rows="3" placeholder="High swap fees"></textarea></div>'
+            + '</div></div>'
+            // Collapsible detail editor
+            + '<div class="fxt-collapsible-box"><h5>\uD83D\uDD3D Collapsible Detail</h5>'
+            + '<div class="fxt-section-field"><label>Hidden detail content</label>'
+            + '<div class="fxt-editor-wrap fxt-editor-small" data-editor-id="' + dId + '">'
+            + '<div class="fxt-editor-tabs"><span class="fxt-editor-tab active" data-mode="visual">Visual</span><span class="fxt-editor-tab" data-mode="code">Code</span></div>'
+            + '<div class="fxt-editor-container"><textarea id="' + dId + '" name="fxt_sections[' + index + '][collapse_detail]" class="fxt-rich-editor fxt-rich-editor-small" rows="8"></textarea></div>'
+            + '</div></div>'
+            + '<div class="fxt-section-grid">'
+            + '<div class="fxt-section-field"><label>Show more text</label><input type="text" name="fxt_sections[' + index + '][show_text]" value="" placeholder="Default from Customizer"></div>'
+            + '<div class="fxt-section-field"><label>Show less text</label><input type="text" name="fxt_sections[' + index + '][hide_text]" value="" placeholder="Default from Customizer"></div>'
+            + '</div></div>'
+            + '</div></div>';
+        }
 
         // ── Remove section ──
         function bindRemove(item) {
@@ -448,12 +509,7 @@ function fxt_broker_sections_meta_box_html($post) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     if (confirm('Remove this section?')) {
-                        var editors = item.querySelectorAll('.fxt-wp-editor-area, .wp-editor-area');
-                        editors.forEach(function(ta) {
-                            if (typeof tinymce !== 'undefined' && tinymce.get(ta.id)) {
-                                tinymce.get(ta.id).remove();
-                            }
-                        });
+                        destroySectionEditors(item);
                         item.remove();
                         reindex();
                     }
@@ -461,10 +517,7 @@ function fxt_broker_sections_meta_box_html($post) {
             }
         }
 
-        // ══════════════════════════════════════════════════════════════
-        // FIX: Collapse/expand — reinit TinyMCE khi expand section
-        // TinyMCE không render đúng khi container bị display:none
-        // ══════════════════════════════════════════════════════════════
+        // ── Collapse/expand — reinit TinyMCE khi expand ──
         function bindCollapse(item) {
             var header = item.querySelector('.fxt-section-header');
             if (header) {
@@ -472,98 +525,82 @@ function fxt_broker_sections_meta_box_html($post) {
                     if (e.target.closest('.fxt-remove-section')) return;
 
                     var wasCollapsed = item.classList.contains('fxt-collapsed');
+
+                    if (!wasCollapsed) {
+                        // Sắp collapse → save trước
+                        destroySectionEditors(item);
+                    }
+
                     item.classList.toggle('fxt-collapsed');
 
-                    // Nếu vừa expand (wasCollapsed = true), reinit editors
                     if (wasCollapsed) {
+                        // Vừa expand → init lại editors
                         setTimeout(function() {
-                            var editorAreas = item.querySelectorAll('.wp-editor-area');
-                            editorAreas.forEach(function(ta) {
-                                if (ta.id) {
-                                    reinitEditor(ta.id);
-                                }
-                            });
-                        }, 100);
-                    } else {
-                        // Khi collapse, save content từ TinyMCE về textarea trước
-                        if (typeof tinymce !== 'undefined') {
-                            var editorAreas = item.querySelectorAll('.wp-editor-area');
-                            editorAreas.forEach(function(ta) {
-                                var ed = tinymce.get(ta.id);
-                                if (ed) {
-                                    ed.save();
-                                }
-                            });
-                        }
+                            initSectionEditors(item);
+                        }, 150);
                     }
                 });
             }
         }
 
-        // ── Sync TinyMCE → textarea trước khi submit form ──
+        // ── Sync trước khi submit ──
         var postForm = document.getElementById('post');
         if (postForm) {
             postForm.addEventListener('submit', function() {
                 if (typeof tinymce !== 'undefined') {
                     tinymce.triggerSave();
                 }
+                // Cũng save cho collapsed sections (TinyMCE đã bị remove)
+                // Textarea vẫn giữ data vì tinymce.save() đã chạy trước khi collapse
             });
         }
 
-        // ── Bind existing sections ──
-        wrap.querySelectorAll('.fxt-section-item').forEach(function(item) {
-            bindRemove(item);
-            bindCollapse(item);
-        });
-
         // ══════════════════════════════════════════════════════════════
-        // FIX CHÍNH: Reinit TinyMCE cho tất cả existing sections
-        // 
-        // Vấn đề: wp_editor() render server-side nhưng TinyMCE init
-        // có thể fail hoặc không load content vào Visual tab.
-        // Textarea (Code tab) luôn có data đúng.
-        //
-        // Giải pháp: Sau khi page load xong, đợi TinyMCE ready,
-        // rồi kiểm tra từng editor — nếu Visual trống nhưng textarea
-        // có data thì reinit editor đó.
+        // INIT: Bind + init TinyMCE cho tất cả existing sections
         // ══════════════════════════════════════════════════════════════
-        function fixExistingEditors() {
-            if (typeof tinymce === 'undefined') return;
 
-            var editorAreas = wrap.querySelectorAll('.wp-editor-area');
-            editorAreas.forEach(function(ta) {
-                if (!ta.id) return;
-                reinitEditor(ta.id);
+        function initAll() {
+            wrap.querySelectorAll('.fxt-section-item').forEach(function(item) {
+                bindRemove(item);
+                bindCollapse(item);
+                if (!item.classList.contains('fxt-collapsed')) {
+                    initSectionEditors(item);
+                }
             });
         }
 
-        // Chạy fix sau khi page load hoàn tất + thêm delay cho TinyMCE init
+        // Đợi TinyMCE sẵn sàng
+        function waitForTinyMCE(callback) {
+            if (typeof tinymce !== 'undefined' && typeof tinymce.init === 'function') {
+                callback();
+                return;
+            }
+            var attempts = 0;
+            var interval = setInterval(function() {
+                attempts++;
+                if (typeof tinymce !== 'undefined' && typeof tinymce.init === 'function') {
+                    clearInterval(interval);
+                    callback();
+                } else if (attempts > 50) { // 5 giây
+                    clearInterval(interval);
+                    console.warn('FXT: TinyMCE not available after 5s');
+                    // Vẫn bind remove/collapse dù không có TinyMCE
+                    wrap.querySelectorAll('.fxt-section-item').forEach(function(item) {
+                        bindRemove(item);
+                        bindCollapse(item);
+                    });
+                }
+            }, 100);
+        }
+
+        // Chạy sau window load + delay nhỏ
         if (document.readyState === 'complete') {
-            setTimeout(fixExistingEditors, 500);
+            waitForTinyMCE(function() { setTimeout(initAll, 300); });
         } else {
             window.addEventListener('load', function() {
-                setTimeout(fixExistingEditors, 500);
+                waitForTinyMCE(function() { setTimeout(initAll, 300); });
             });
         }
-
-        // Backup: Nếu TinyMCE load chậm, thử lại sau 2 giây
-        setTimeout(function() {
-            if (typeof tinymce !== 'undefined') {
-                var editorAreas = wrap.querySelectorAll('.wp-editor-area');
-                editorAreas.forEach(function(ta) {
-                    if (!ta.id) return;
-                    var ed = tinymce.get(ta.id);
-                    if (ed) {
-                        var content = ed.getContent();
-                        var textareaContent = ta.value;
-                        // Nếu Visual vẫn trống mà textarea có data
-                        if ((!content || content.replace(/(<p>(<br\s*\/?>|\s|&nbsp;)*<\/p>|<br\s*\/?>|\s|&nbsp;)*/gi, '').trim() === '') && textareaContent.trim() !== '') {
-                            ed.setContent(textareaContent);
-                        }
-                    }
-                });
-            }
-        }, 2000);
 
     })();
     </script>
@@ -572,9 +609,10 @@ function fxt_broker_sections_meta_box_html($post) {
 }
 
 /**
- * Render fields cho 1 section — sử dụng wp_editor()
+ * Render fields cho 1 section — TEXTAREA THUẦN (không dùng wp_editor)
+ * TinyMCE sẽ được init hoàn toàn bằng JavaScript
  */
-function fxt_render_section_fields_with_editor($index, $data) {
+function fxt_render_section_fields($index, $data) {
     $title           = $data['title'] ?? '';
     $content         = $data['content'] ?? '';
     $show_proscons   = !empty($data['show_proscons']) ? '1' : '';
@@ -586,7 +624,6 @@ function fxt_render_section_fields_with_editor($index, $data) {
     $hide_text       = $data['hide_text'] ?? '';
     $num = is_numeric($index) ? ($index + 1) : '#';
 
-    // Unique editor IDs
     $content_editor_id = 'fxt_sec_content_' . $index;
     $detail_editor_id  = 'fxt_sec_detail_' . $index;
     ?>
@@ -621,25 +658,20 @@ function fxt_render_section_fields_with_editor($index, $data) {
                 </div>
             </div>
 
-            <!-- Section Content — WordPress Editor -->
+            <!-- Section Content — Visual/Code Editor -->
             <div class="fxt-section-field fxt-section-full">
                 <label>📝 Section Content</label>
-                <div class="fxt-editor-wrap">
-                    <?php
-                    wp_editor($content, $content_editor_id, [
-                        'textarea_name' => 'fxt_sections[' . $index . '][content]',
-                        'textarea_rows' => 10,
-                        'media_buttons' => true,
-                        'teeny'         => false,
-                        'quicktags'     => true,
-                        'tinymce'       => [
-                            'toolbar1'      => 'formatselect bold italic bullist numlist blockquote alignleft aligncenter alignright link unlink wp_more fullscreen',
-                            'toolbar2'      => 'strikethrough hr forecolor pastetext removeformat charmap outdent indent undo redo wp_help',
-                            'block_formats' => 'Paragraph=p;Heading 2=h2;Heading 3=h3;Heading 4=h4;Heading 5=h5;Heading 6=h6;Preformatted=pre',
-                            'height'        => 250,
-                        ],
-                    ]);
-                    ?>
+                <div class="fxt-editor-wrap" data-editor-id="<?php echo esc_attr($content_editor_id); ?>">
+                    <div class="fxt-editor-tabs">
+                        <span class="fxt-editor-tab active" data-mode="visual">Visual</span>
+                        <span class="fxt-editor-tab" data-mode="code">Code</span>
+                    </div>
+                    <div class="fxt-editor-container">
+                        <textarea id="<?php echo esc_attr($content_editor_id); ?>"
+                                  name="fxt_sections[<?php echo $index; ?>][content]"
+                                  class="fxt-rich-editor"
+                                  rows="12"><?php echo esc_textarea($content); ?></textarea>
+                    </div>
                 </div>
             </div>
 
@@ -660,27 +692,22 @@ function fxt_render_section_fields_with_editor($index, $data) {
                 </div>
             </div>
 
-            <!-- Collapsible Detail — WordPress Editor -->
+            <!-- Collapsible Detail — Visual/Code Editor -->
             <div class="fxt-collapsible-box">
                 <h5>🔽 Collapsible Detail (chỉ hiện khi bật checkbox)</h5>
                 <div class="fxt-section-field">
                     <label>Hidden detail content (hiện khi click "Show more")</label>
-                    <div class="fxt-editor-wrap">
-                        <?php
-                        wp_editor($collapse_detail, $detail_editor_id, [
-                            'textarea_name' => 'fxt_sections[' . $index . '][collapse_detail]',
-                            'textarea_rows' => 8,
-                            'media_buttons' => true,
-                            'teeny'         => false,
-                            'quicktags'     => true,
-                            'tinymce'       => [
-                                'toolbar1'      => 'formatselect bold italic bullist numlist blockquote alignleft aligncenter alignright link unlink fullscreen',
-                                'toolbar2'      => 'strikethrough hr forecolor pastetext removeformat charmap outdent indent undo redo',
-                                'block_formats' => 'Paragraph=p;Heading 2=h2;Heading 3=h3;Heading 4=h4;Heading 5=h5;Heading 6=h6;Preformatted=pre',
-                                'height'        => 200,
-                            ],
-                        ]);
-                        ?>
+                    <div class="fxt-editor-wrap fxt-editor-small" data-editor-id="<?php echo esc_attr($detail_editor_id); ?>">
+                        <div class="fxt-editor-tabs">
+                            <span class="fxt-editor-tab active" data-mode="visual">Visual</span>
+                            <span class="fxt-editor-tab" data-mode="code">Code</span>
+                        </div>
+                        <div class="fxt-editor-container">
+                            <textarea id="<?php echo esc_attr($detail_editor_id); ?>"
+                                      name="fxt_sections[<?php echo $index; ?>][collapse_detail]"
+                                      class="fxt-rich-editor fxt-rich-editor-small"
+                                      rows="8"><?php echo esc_textarea($collapse_detail); ?></textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="fxt-section-grid">
@@ -705,23 +732,16 @@ function fxt_render_section_fields_with_editor($index, $data) {
 }
 
 // ╔═══════════════════════════════════════════════════════════════╗
-// ║  AJAX Handler: Thêm section mới (trả về HTML có wp_editor)  ║
+// ║  AJAX Handler — giữ backward compatible                      ║
 // ╚═══════════════════════════════════════════════════════════════╝
 
 add_action('wp_ajax_fxt_add_broker_section', function () {
     check_ajax_referer('fxt_add_section_nonce', 'nonce');
-
-    if (!current_user_can('edit_posts')) {
-        wp_die('Unauthorized');
-    }
-
+    if (!current_user_can('edit_posts')) wp_die('Unauthorized');
     $index = intval($_POST['index'] ?? 0);
-
     ob_start();
-    fxt_render_section_fields_with_editor($index, []);
-    $html = ob_get_clean();
-
-    echo $html;
+    fxt_render_section_fields($index, []);
+    echo ob_get_clean();
     wp_die();
 });
 
@@ -739,7 +759,6 @@ add_action('save_post_broker', function ($post_id) {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
     if (!current_user_can('edit_post', $post_id)) return;
 
-    // Text fields
     $text_fields = [
         'fxt_rating'      => '_fxt_rating',
         'fxt_spread'      => '_fxt_spread',
