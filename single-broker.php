@@ -121,7 +121,7 @@ if (!empty($sections)):
 
             <?php if (!empty($sec['content'])): ?>
             <div class="broker-section-content entry-content">
-                <?php echo wp_kses_post($sec['content']); ?>
+                <?php echo apply_filters('the_content', $sec['content']); ?>
             </div>
             <?php endif; ?>
 
@@ -160,7 +160,7 @@ if (!empty($sections)):
             <div class="broker-section-collapsible">
                 <div class="broker-section-detail" style="display:none;">
                     <div class="broker-section-detail-content entry-content">
-                        <?php echo wp_kses_post($sec['collapse_detail']); ?>
+                        <?php echo apply_filters('the_content', $sec['collapse_detail']); ?>
                     </div>
                 </div>
                 <button type="button" class="broker-toggle-detail"
