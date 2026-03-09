@@ -657,3 +657,40 @@ body.admin-bar .broker-section{scroll-margin-top:calc(var(--header-h) + 92px)}
    ╚═══════════════════════════════════════════════════╝ */
 .sub-post-cta-buttons{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;padding:20px;background:var(--c-bg-alt);border:1px dashed var(--c-border);border-radius:var(--r-md);justify-content:center}
 .section-cta-buttons{margin-top:16px;margin-bottom:16px;padding:16px;background:var(--c-primary-light);border:1px dashed var(--c-primary)}
+
+/* ╔═══════════════════════════════════════════════════╗
+   ║  PHẦN 22: SUB-POST INTRO & OUTRO TEXT             ║
+   ║  Thêm vào cuối style.css                          ║
+   ╚═══════════════════════════════════════════════════╝ */
+
+/* Intro text — hiện sau broker info box, trước CTA buttons */
+.sub-post-intro {
+    margin-bottom: 32px;
+    padding: 24px;
+    background: var(--c-bg-alt);
+    border-left: 4px solid var(--c-primary);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+.sub-post-intro p:last-child {
+    margin-bottom: 0;
+}
+
+/* Outro text — hiện sau sections, trước tags & share */
+.sub-post-outro {
+    margin: 40px 0 32px;
+    padding: 24px;
+    background: var(--c-bg-warm);
+    border-left: 4px solid var(--c-accent);
+    border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+.sub-post-outro p:last-child {
+    margin-bottom: 0;
+}
+
+/* Author title (chức danh) */
+.author-box .author-title {
+    font-size: .8rem;
+    color: var(--c-primary);
+    font-weight: 600;
+    margin-bottom: 4px;
+}

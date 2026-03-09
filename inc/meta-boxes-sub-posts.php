@@ -568,3 +568,137 @@ function fxt_save_sub_post_meta($post_id) {
 // Hook save cho cả 2 post types
 add_action('save_post_broker_post', 'fxt_save_sub_post_meta');
 add_action('save_post_generic_post', 'fxt_save_sub_post_meta');
+
+
+add_action('add_meta_boxes', function () {
+    $post_types = ['broker_post', 'generic_post'];
+
+    foreach ($post_types as $pt) {
+        add_meta_box(
+            'fxt_sub_intro_outro',
+            '📝 Intro & Outro Text (Đầu & Cuối bài)',
+            'fxt_sub_intro_outro_html',
+            $pt,
+            'normal',
+            'high'  // high priority = hiện trước các meta box khác
+        );
+    }
+});
+
+/**
+ * Render HTML cho Intro & Outro meta box
+ */
+function fxt_sub_intro_outro_html($post) {
+    // Nonce đã có từ fxt_sub_post_meta_nonce, nhưng thêm 1 nonce riêng cho an toàn
+    wp_nonce_field('fxt_sub_intro_outro_meta', 'fxt_sub_intro_outro_nonce');
+
+    $intro_text = get_post_meta($post->ID, '_fxt_sub_intro_text', true);
+    $outro_text = get_post_meta($post->ID, '_fxt_sub_outro_text', true);
+
+    $intro_editor_id = 'fxt_sub_intro_text';
+    $outro_editor_id = 'fxt_sub_outro_text';
+    ?>
+    <style>
+        .fxt-intro-outro-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        .fxt-intro-outro-field { }
+        .fxt-intro-outro-field > label {
+            display: block; font-weight: 700; margin-bottom: 8px;
+            font-size: 14px; color: #1e3a5f;
+        }
+        .fxt-intro-outro-hint {
+            font-size: 11px; color: #888; margin-top: 4px; font-style: italic;
+        }
+        .fxt-intro-outro-field .wp-editor-wrap {
+            border: 1px solid #ccd0d4; border-radius: 4px;
+        }
+    </style>
+
+    <p style="margin-bottom:16px; color:#555; font-size:13px;">
+        <strong>Intro Text</strong> hiển thị ngay sau box thông tin broker (trước nội dung chính).<br>
+        <strong>Outro Text</strong> hiển thị ở cuối bài (sau nội dung, trước CTA box).
+    </p>
+
+    <div class="fxt-intro-outro-grid">
+        <!-- INTRO TEXT -->
+        <div class="fxt-intro-outro-field">
+            <label>📌 Intro Text (Đoạn mở đầu)</label>
+            <?php
+            wp_editor($intro_text, $intro_editor_id, [
+                'textarea_name' => 'fxt_sub_intro_text',
+                'textarea_rows' => 6,
+                'media_buttons' => true,
+                'teeny'         => false,
+                'quicktags'     => true,
+                'tinymce'       => [
+                    'toolbar1' => 'formatselect bold italic bullist numlist blockquote link unlink fullscreen',
+                    'toolbar2' => 'strikethrough hr forecolor pastetext removeformat undo redo',
+                    'height'   => 180,
+                ],
+            ]);
+            ?>
+            <p class="fxt-intro-outro-hint">
+                Hiển thị ngay sau box "Bài viết về [Broker]". Hỗ trợ HTML đầy đủ (headings, lists, links, media).
+                <br>Để trống = không hiện intro.
+            </p>
+        </div>
+
+        <!-- OUTRO TEXT -->
+        <div class="fxt-intro-outro-field">
+            <label>📌 Outro Text (Đoạn kết thúc)</label>
+            <?php
+            wp_editor($outro_text, $outro_editor_id, [
+                'textarea_name' => 'fxt_sub_outro_text',
+                'textarea_rows' => 6,
+                'media_buttons' => true,
+                'teeny'         => false,
+                'quicktags'     => true,
+                'tinymce'       => [
+                    'toolbar1' => 'formatselect bold italic bullist numlist blockquote link unlink fullscreen',
+                    'toolbar2' => 'strikethrough hr forecolor pastetext removeformat undo redo',
+                    'height'   => 180,
+                ],
+            ]);
+            ?>
+            <p class="fxt-intro-outro-hint">
+                Hiển thị sau nội dung chính, trước CTA box & silo links. Hỗ trợ HTML đầy đủ.
+                <br>Để trống = không hiện outro.
+            </p>
+        </div>
+    </div>
+    <?php
+}
+
+/**
+ * Save Intro & Outro text
+ */
+function fxt_save_intro_outro_meta($post_id) {
+    if (!isset($_POST['fxt_sub_intro_outro_nonce']) ||
+        !wp_verify_nonce($_POST['fxt_sub_intro_outro_nonce'], 'fxt_sub_intro_outro_meta')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    // Save intro
+    if (isset($_POST['fxt_sub_intro_text'])) {
+        $intro = wp_kses_post($_POST['fxt_sub_intro_text']);
+        if ($intro) {
+            update_post_meta($post_id, '_fxt_sub_intro_text', $intro);
+        } else {
+            delete_post_meta($post_id, '_fxt_sub_intro_text');
+        }
+    }
+
+    // Save outro
+    if (isset($_POST['fxt_sub_outro_text'])) {
+        $outro = wp_kses_post($_POST['fxt_sub_outro_text']);
+        if ($outro) {
+            update_post_meta($post_id, '_fxt_sub_outro_text', $outro);
+        } else {
+            delete_post_meta($post_id, '_fxt_sub_outro_text');
+        }
+    }
+}
+
+add_action('save_post_broker_post', 'fxt_save_intro_outro_meta');
+add_action('save_post_generic_post', 'fxt_save_intro_outro_meta');

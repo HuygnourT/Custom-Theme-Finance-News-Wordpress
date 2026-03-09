@@ -841,3 +841,139 @@ function fxt_get_broker_sub_posts($broker_id, $exclude = 0) {
         'order'       => 'ASC',
     ]);
 }
+
+
+add_action('add_meta_boxes', function () {
+    add_meta_box(
+        'fxt_broker_post_author',
+        '✏️ Custom Author (Tác giả hiển thị)',
+        'fxt_broker_post_author_html',
+        'broker_post',
+        'side',
+        'default'
+    );
+
+    // Cũng thêm cho generic_post
+    add_meta_box(
+        'fxt_generic_post_author',
+        '✏️ Custom Author (Tác giả hiển thị)',
+        'fxt_broker_post_author_html',
+        'generic_post',
+        'side',
+        'default'
+    );
+});
+
+function fxt_broker_post_author_html($post) {
+    wp_nonce_field('fxt_custom_author_meta', 'fxt_custom_author_nonce');
+
+    $author_name = get_post_meta($post->ID, '_fxt_custom_author_name', true);
+    $author_title = get_post_meta($post->ID, '_fxt_custom_author_title', true);
+    $author_bio = get_post_meta($post->ID, '_fxt_custom_author_bio', true);
+    $author_avatar_url = get_post_meta($post->ID, '_fxt_custom_author_avatar', true);
+    ?>
+    <style>
+        .fxt-author-field { margin-bottom: 12px; }
+        .fxt-author-field label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 4px; color: #1e3a5f; }
+        .fxt-author-field input, .fxt-author-field textarea { width: 100%; padding: 6px 10px; border: 1px solid #ccd0d4; border-radius: 4px; font-size: 13px; }
+        .fxt-author-field input:focus, .fxt-author-field textarea:focus { border-color: #2271b1; outline: none; box-shadow: 0 0 0 1px #2271b1; }
+        .fxt-author-hint { font-size: 11px; color: #888; margin-top: 3px; font-style: italic; }
+        .fxt-author-preview { margin-top: 12px; padding: 10px; background: #f9fafb; border: 1px solid #e0e0e0; border-radius: 6px; }
+        .fxt-author-preview-name { font-weight: 700; font-size: 13px; }
+        .fxt-author-preview-title { font-size: 11px; color: #666; }
+    </style>
+
+    <div class="fxt-author-field">
+        <label for="fxt_custom_author_name">Tên hiển thị:</label>
+        <input type="text" id="fxt_custom_author_name" name="fxt_custom_author_name"
+               value="<?php echo esc_attr($author_name); ?>"
+               placeholder="e.g. Nguyễn Văn A">
+        <p class="fxt-author-hint">Để trống = dùng tên tác giả WordPress mặc định.</p>
+    </div>
+
+    <div class="fxt-author-field">
+        <label for="fxt_custom_author_title">Chức danh / Title:</label>
+        <input type="text" id="fxt_custom_author_title" name="fxt_custom_author_title"
+               value="<?php echo esc_attr($author_title); ?>"
+               placeholder="e.g. Forex Analyst, Senior Trader">
+        <p class="fxt-author-hint">Hiển thị dưới tên tác giả (tùy chọn).</p>
+    </div>
+
+    <div class="fxt-author-field">
+        <label for="fxt_custom_author_bio">Bio ngắn:</label>
+        <textarea id="fxt_custom_author_bio" name="fxt_custom_author_bio" rows="3"
+                  placeholder="Kinh nghiệm 5 năm giao dịch Forex..."><?php echo esc_textarea($author_bio); ?></textarea>
+        <p class="fxt-author-hint">Để trống = dùng bio từ WP User Profile.</p>
+    </div>
+
+    <div class="fxt-author-field">
+        <label for="fxt_custom_author_avatar">URL Avatar (tùy chọn):</label>
+        <input type="url" id="fxt_custom_author_avatar" name="fxt_custom_author_avatar"
+               value="<?php echo esc_attr($author_avatar_url); ?>"
+               placeholder="https://...avatar.jpg">
+        <p class="fxt-author-hint">Để trống = dùng Gravatar mặc định.</p>
+    </div>
+
+    <?php if ($author_name): ?>
+    <div class="fxt-author-preview">
+        <div class="fxt-author-preview-name"><?php echo esc_html($author_name); ?></div>
+        <?php if ($author_title): ?>
+        <div class="fxt-author-preview-title"><?php echo esc_html($author_title); ?></div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+    <?php
+}
+
+/**
+ * Save custom author meta
+ */
+function fxt_save_custom_author_meta($post_id) {
+    if (!isset($_POST['fxt_custom_author_nonce']) ||
+        !wp_verify_nonce($_POST['fxt_custom_author_nonce'], 'fxt_custom_author_meta')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    $fields = [
+        'fxt_custom_author_name'   => 'sanitize_text_field',
+        'fxt_custom_author_title'  => 'sanitize_text_field',
+        'fxt_custom_author_bio'    => 'sanitize_textarea_field',
+        'fxt_custom_author_avatar' => 'esc_url_raw',
+    ];
+
+    foreach ($fields as $field => $sanitize) {
+        if (isset($_POST[$field])) {
+            $value = call_user_func($sanitize, $_POST[$field]);
+            if ($value) {
+                update_post_meta($post_id, '_' . $field, $value);
+            } else {
+                delete_post_meta($post_id, '_' . $field);
+            }
+        }
+    }
+}
+
+add_action('save_post_broker_post', 'fxt_save_custom_author_meta');
+add_action('save_post_generic_post', 'fxt_save_custom_author_meta');
+
+/**
+ * Helper: Lấy custom author data
+ * Dùng trong template: $author = fxt_get_custom_author();
+ */
+function fxt_get_custom_author($post_id = null) {
+    if (!$post_id) $post_id = get_the_ID();
+
+    $custom_name = get_post_meta($post_id, '_fxt_custom_author_name', true);
+
+    // Nếu không có custom name → trả về null (dùng author mặc định)
+    if (!$custom_name) return null;
+
+    return [
+        'name'   => $custom_name,
+        'title'  => get_post_meta($post_id, '_fxt_custom_author_title', true),
+        'bio'    => get_post_meta($post_id, '_fxt_custom_author_bio', true),
+        'avatar' => get_post_meta($post_id, '_fxt_custom_author_avatar', true),
+    ];
+}
