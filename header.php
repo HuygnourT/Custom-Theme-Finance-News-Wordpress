@@ -38,6 +38,13 @@
     </div>
 </header>
 
+<?php
+// ═══ CATEGORY BAR — hiển thị ngay dưới header ═══
+if (function_exists('fxt_category_bar')) {
+    fxt_category_bar();
+}
+?>
+
 <div class="mobile-menu-overlay" id="mobile-menu-overlay">
     <div class="mobile-menu-inner">
         <div class="mobile-menu-header">

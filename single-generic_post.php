@@ -1,10 +1,8 @@
 <?php
 /**
- * Single Broker Post Template — Bài phụ hỗ trợ broker pillar
+ * Single Generic Post Template — Bài phụ đa chủ đề
  * 
- * URL: /broker-review/exness/huong-dan-nap-tien/
- * 
- * UPDATED: Xóa TOC, thêm CTA Buttons, Pros/Cons, Collapsible Sections
+ * Tính năng: CTA Buttons, Pros/Cons, Collapsible Sections
  * 
  * @package FXTradingToday
  */
@@ -13,19 +11,9 @@ get_header();
 
 if (have_posts()): the_post();
 
-// Lấy thông tin broker cha
-$parent = fxt_get_parent_broker(get_the_ID());
-$aff = '';
-if ($parent) {
-    $aff = $parent['affiliate_link'];
-}
-if (!$aff) {
-    $aff = get_theme_mod('fxt_default_affiliate_link', '#');
-}
+$parent = fxt_get_generic_parent(get_the_ID());
+$default_aff = get_theme_mod('fxt_default_affiliate_link', '#');
 
-$lbl_open = get_theme_mod('fxt_broker_open_account', 'Open Account');
-
-// Lấy custom meta data cho bài phụ
 $post_cta_buttons = get_post_meta(get_the_ID(), '_fxt_sub_cta_buttons', true);
 if (!is_array($post_cta_buttons)) $post_cta_buttons = [];
 $post_pros = get_post_meta(get_the_ID(), '_fxt_sub_pros', true);
@@ -39,18 +27,26 @@ $default_show = get_theme_mod('fxt_broker_section_show', '▼ Show details');
 $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
 ?>
 
-<article class="single-post single-broker-post" id="post-<?php the_ID(); ?>">
+<article class="single-post single-generic-post" id="post-<?php the_ID(); ?>">
 
-    <!-- Hero / Header -->
+    <!-- Hero -->
     <div class="single-hero">
         <div class="container">
-            <?php fxt_broker_post_breadcrumbs(); ?>
+            <?php // Breadcrumbs: Home > Parent > Title ?>
+            <nav class="breadcrumbs" aria-label="Breadcrumb">
+                <a href="<?php echo home_url('/'); ?>"><?php echo esc_html(get_theme_mod('fxt_breadcrumb_home', 'Home')); ?></a>
+                <?php if ($parent): ?>
+                <span class="breadcrumb-sep">›</span>
+                <a href="<?php echo esc_url($parent['permalink']); ?>"><?php echo esc_html($parent['title']); ?></a>
+                <?php endif; ?>
+                <span class="breadcrumb-sep">›</span>
+                <span class="breadcrumb-current"><?php the_title(); ?></span>
+            </nav>
             <h1 class="single-title"><?php the_title(); ?></h1>
             <?php fxt_post_meta(); ?>
         </div>
     </div>
 
-    <!-- Nội dung -->
     <div class="container layout-with-sidebar">
         <div class="content-area">
 
@@ -61,27 +57,19 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             </div>
             <?php endif; ?>
 
-            <!-- Broker Info Box (compact) -->
+            <!-- Parent Info Box -->
             <?php if ($parent): ?>
             <div class="broker-post-parent-box">
                 <div class="broker-post-parent-info">
-                    <span class="broker-post-parent-label">📊 Bài viết về</span>
+                    <span class="broker-post-parent-label">📂 Chủ đề:</span>
                     <a href="<?php echo esc_url($parent['permalink']); ?>" class="broker-post-parent-link">
                         <strong><?php echo esc_html($parent['title']); ?></strong>
                     </a>
-                    <?php if ($parent['meta']['rating']): ?>
-                        <?php echo fxt_star_rating($parent['meta']['rating']); ?>
-                    <?php endif; ?>
                 </div>
-                <?php if ($aff && $aff !== '#'): ?>
-                <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-sm" target="_blank" rel="noopener nofollow">
-                    <?php echo esc_html($lbl_open); ?> <?php echo esc_html($parent['title']); ?>
-                </a>
-                <?php endif; ?>
             </div>
             <?php endif; ?>
 
-            <!-- CTA Buttons (custom) -->
+            <!-- CTA Buttons -->
             <?php if (!empty($post_cta_buttons)): ?>
             <div class="sub-post-cta-buttons">
                 <?php foreach ($post_cta_buttons as $cta):
@@ -102,27 +90,19 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
                 <?php if ($post_pros_arr): ?>
                 <div class="pros-box">
                     <h3 class="pros-title"><?php echo esc_html(get_theme_mod('fxt_broker_pros_title', '✅ Pros')); ?></h3>
-                    <ul>
-                        <?php foreach ($post_pros_arr as $p): if (trim($p)): ?>
-                        <li><?php echo esc_html(trim($p)); ?></li>
-                        <?php endif; endforeach; ?>
-                    </ul>
+                    <ul><?php foreach ($post_pros_arr as $p): if (trim($p)): ?><li><?php echo esc_html(trim($p)); ?></li><?php endif; endforeach; ?></ul>
                 </div>
                 <?php endif; ?>
                 <?php if ($post_cons_arr): ?>
                 <div class="cons-box">
                     <h3 class="cons-title"><?php echo esc_html(get_theme_mod('fxt_broker_cons_title', '❌ Cons')); ?></h3>
-                    <ul>
-                        <?php foreach ($post_cons_arr as $c): if (trim($c)): ?>
-                        <li><?php echo esc_html(trim($c)); ?></li>
-                        <?php endif; endforeach; ?>
-                    </ul>
+                    <ul><?php foreach ($post_cons_arr as $c): if (trim($c)): ?><li><?php echo esc_html(trim($c)); ?></li><?php endif; endforeach; ?></ul>
                 </div>
                 <?php endif; ?>
             </div>
             <?php endif; ?>
 
-            <!-- Nội dung bài viết (main editor) -->
+            <!-- Main Content -->
             <div class="single-content entry-content">
                 <?php the_content(); ?>
             </div>
@@ -147,14 +127,10 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
                 </div>
                 <?php endif; ?>
 
-                <!-- Section CTA Buttons -->
                 <?php if (!empty($sec['cta_buttons']) && is_array($sec['cta_buttons'])):
                     $has_cta = false;
-                    foreach ($sec['cta_buttons'] as $cta) {
-                        if (!empty($cta['text']) && !empty($cta['url'])) { $has_cta = true; break; }
-                    }
-                    if ($has_cta):
-                ?>
+                    foreach ($sec['cta_buttons'] as $cta) { if (!empty($cta['text']) && !empty($cta['url'])) { $has_cta = true; break; } }
+                    if ($has_cta): ?>
                 <div class="sub-post-cta-buttons section-cta-buttons">
                     <?php foreach ($sec['cta_buttons'] as $cta):
                         if (empty($cta['text']) || empty($cta['url'])) continue;
@@ -168,25 +144,17 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
                 </div>
                 <?php endif; endif; ?>
 
-                <!-- Section Pros/Cons -->
                 <?php if (!empty($sec['show_proscons']) && ($sec_pros || $sec_cons)): ?>
                 <div class="broker-pros-cons broker-section-proscons">
                     <?php if ($sec_pros): ?>
-                    <div class="pros-box">
-                        <h3 class="pros-title"><?php echo esc_html(get_theme_mod('fxt_broker_pros_title', '✅ Pros')); ?></h3>
-                        <ul><?php foreach ($sec_pros as $p): if (trim($p)): ?><li><?php echo esc_html(trim($p)); ?></li><?php endif; endforeach; ?></ul>
-                    </div>
+                    <div class="pros-box"><h3 class="pros-title"><?php echo esc_html(get_theme_mod('fxt_broker_pros_title', '✅ Pros')); ?></h3><ul><?php foreach ($sec_pros as $p): if (trim($p)): ?><li><?php echo esc_html(trim($p)); ?></li><?php endif; endforeach; ?></ul></div>
                     <?php endif; ?>
                     <?php if ($sec_cons): ?>
-                    <div class="cons-box">
-                        <h3 class="cons-title"><?php echo esc_html(get_theme_mod('fxt_broker_cons_title', '❌ Cons')); ?></h3>
-                        <ul><?php foreach ($sec_cons as $c): if (trim($c)): ?><li><?php echo esc_html(trim($c)); ?></li><?php endif; endforeach; ?></ul>
-                    </div>
+                    <div class="cons-box"><h3 class="cons-title"><?php echo esc_html(get_theme_mod('fxt_broker_cons_title', '❌ Cons')); ?></h3><ul><?php foreach ($sec_cons as $c): if (trim($c)): ?><li><?php echo esc_html(trim($c)); ?></li><?php endif; endforeach; ?></ul></div>
                     <?php endif; ?>
                 </div>
                 <?php endif; ?>
 
-                <!-- Collapsible detail -->
                 <?php if (!empty($sec['collapsible']) && !empty($sec['collapse_detail'])): ?>
                 <div class="broker-section-collapsible">
                     <div class="broker-section-detail" style="display:none;">
@@ -205,8 +173,7 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             <?php endforeach; endif; ?>
 
             <!-- Tags -->
-            <?php $tags = get_the_tags();
-            if ($tags): ?>
+            <?php $tags = get_the_tags(); if ($tags): ?>
             <div class="single-tags">
                 <span class="tags-label"><?php echo esc_html(get_theme_mod('fxt_label_tags', 'Tags:')); ?></span>
                 <?php foreach ($tags as $tag): ?>
@@ -215,42 +182,27 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             </div>
             <?php endif; ?>
 
-            <!-- Share buttons -->
             <?php fxt_share_buttons(); ?>
 
-            <!-- CTA Box -->
-            <?php if ($parent && $aff && $aff !== '#'): ?>
-            <div class="bottom-cta-box">
-                <h3><?php echo esc_html(str_replace('{name}', $parent['title'], get_theme_mod('fxt_broker_cta_ready', 'Are you ready to trade with {name}?'))); ?></h3>
-                <p><?php echo esc_html(get_theme_mod('fxt_broker_cta_desc', 'Open an account in just a few minutes and start trading today.')); ?></p>
-                <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Get Started →')); ?></a>
-            </div>
-            <?php endif; ?>
-
-            <!-- Internal Links: Bài pillar + các bài phụ khác -->
-            <?php if ($parent):
-                $siblings = fxt_get_broker_sub_posts($parent['ID'], get_the_ID());
+            <!-- Sibling posts -->
+            <?php
+            $siblings = fxt_get_generic_siblings(get_the_ID());
+            if ($parent && ($siblings || $parent)):
             ?>
             <div class="broker-post-related-silo">
-                <h3 class="section-title">📚 Thêm về <?php echo esc_html($parent['title']); ?></h3>
+                <h3 class="section-title">📚 Bài viết liên quan: <?php echo esc_html($parent['title']); ?></h3>
                 <div class="silo-links">
+                    <?php if (!empty($parent['ID'])): ?>
                     <a href="<?php echo esc_url($parent['permalink']); ?>" class="silo-link silo-link-pillar">
                         <span class="silo-link-icon">⭐</span>
-                        <span class="silo-link-text">
-                            <strong><?php echo esc_html(get_theme_mod('fxt_broker_review_prefix', 'Review')); ?> <?php echo esc_html($parent['title']); ?></strong>
-                            <small>Bài đánh giá tổng hợp</small>
-                        </span>
+                        <span class="silo-link-text"><strong><?php echo esc_html($parent['title']); ?></strong><small>Bài viết chính</small></span>
                         <span class="silo-link-arrow">→</span>
                     </a>
+                    <?php endif; ?>
                     <?php foreach ($siblings as $sib): ?>
                     <a href="<?php echo get_permalink($sib->ID); ?>" class="silo-link">
                         <span class="silo-link-icon">📝</span>
-                        <span class="silo-link-text">
-                            <strong><?php echo esc_html($sib->post_title); ?></strong>
-                            <?php if (has_excerpt($sib->ID)): ?>
-                            <small><?php echo esc_html(wp_trim_words(get_the_excerpt($sib->ID), 12)); ?></small>
-                            <?php endif; ?>
-                        </span>
+                        <span class="silo-link-text"><strong><?php echo esc_html($sib->post_title); ?></strong></span>
                         <span class="silo-link-arrow">→</span>
                     </a>
                     <?php endforeach; ?>
@@ -258,7 +210,7 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             </div>
             <?php endif; ?>
 
-            <!-- Author box -->
+            <!-- Author -->
             <div class="author-box">
                 <div class="author-avatar"><?php echo get_avatar(get_the_author_meta('ID'), 64); ?></div>
                 <div class="author-info">
