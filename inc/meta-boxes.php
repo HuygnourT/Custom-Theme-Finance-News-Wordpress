@@ -1,10 +1,11 @@
 <?php
 /**
- * Meta Boxes - Custom Fields cho Broker
+ * Meta Boxes - Custom Fields cho Broker + Broker Post
  * 
  * FIX 1: Thêm 'classic-editor' support để Gutenberg không block meta box
  * FIX 2: Lưu pros/cons dùng sanitize_textarea_field để giữ line breaks
  * NEW: Broker Sections với wp_editor() cho content & hidden detail
+ * NEW: Broker Post meta box (parent broker selector)
  * 
  * @package FXTradingToday
  */
@@ -31,6 +32,18 @@ add_action('add_meta_boxes', function () {
         'broker',
         'normal',
         'default'
+    );
+
+    // ╔═══════════════════════════════════════════════════════════╗
+    // ║  BROKER POST: Meta box chọn broker cha                   ║
+    // ╚═══════════════════════════════════════════════════════════╝
+    add_meta_box(
+        'fxt_broker_post_parent',
+        '🔗 Broker Cha (Bắt buộc)',
+        'fxt_broker_post_parent_html',
+        'broker_post',
+        'side',
+        'high'
     );
 });
 
@@ -155,6 +168,115 @@ function fxt_broker_meta_box_html($post) {
 }
 
 // ╔═══════════════════════════════════════════════════════════════╗
+// ║  BROKER POST: Render meta box chọn Broker cha                ║
+// ╚═══════════════════════════════════════════════════════════════╝
+
+function fxt_broker_post_parent_html($post) {
+    wp_nonce_field('fxt_broker_post_meta', 'fxt_broker_post_meta_nonce');
+
+    $current_parent = get_post_meta($post->ID, '_fxt_parent_broker', true);
+
+    $brokers = get_posts([
+        'post_type'   => 'broker',
+        'numberposts' => -1,
+        'orderby'     => 'title',
+        'order'       => 'ASC',
+        'post_status' => 'publish',
+    ]);
+    ?>
+    <style>
+        .fxt-parent-broker-select { width: 100%; padding: 8px; border: 1px solid #ccd0d4; border-radius: 4px; font-size: 13px; }
+        .fxt-parent-broker-select:focus { border-color: #2271b1; outline: none; box-shadow: 0 0 0 1px #2271b1; }
+        .fxt-parent-broker-hint { font-size: 11px; color: #666; margin-top: 8px; line-height: 1.5; }
+        .fxt-parent-broker-preview { margin-top: 12px; padding: 10px; background: #f0f6fc; border: 1px solid #c3daf5; border-radius: 4px; font-size: 12px; display: none; }
+        .fxt-parent-broker-preview.visible { display: block; }
+        .fxt-parent-broker-preview a { font-weight: 600; }
+    </style>
+
+    <p><strong>Chọn Broker pillar mà bài này hỗ trợ:</strong></p>
+
+    <select name="fxt_parent_broker" id="fxt_parent_broker" class="fxt-parent-broker-select">
+        <option value="">— Chọn Broker —</option>
+        <?php foreach ($brokers as $b): ?>
+            <option value="<?php echo $b->ID; ?>" <?php selected($current_parent, $b->ID); ?>>
+                <?php echo esc_html($b->post_title); ?>
+                <?php
+                $rating = get_post_meta($b->ID, '_fxt_rating', true);
+                if ($rating) echo ' (' . $rating . '/10)';
+                ?>
+            </option>
+        <?php endforeach; ?>
+    </select>
+
+    <p class="fxt-parent-broker-hint">
+        ⚠️ <strong>Bắt buộc.</strong> Bài này sẽ nằm trong URL silo của broker đã chọn.<br>
+        Ví dụ: <code>/broker-review/<em>exness</em>/<em>bai-viet-nay</em>/</code><br>
+        💡 Sau khi publish, vào <strong>Settings → Permalinks</strong> và nhấn "Save Changes" nếu link 404.
+    </p>
+
+    <?php if ($current_parent): 
+        $parent = get_post($current_parent);
+        if ($parent):
+    ?>
+    <div class="fxt-parent-broker-preview visible">
+        📌 Broker: <a href="<?php echo get_edit_post_link($current_parent); ?>"><?php echo esc_html($parent->post_title); ?></a><br>
+        🔗 URL: <code><?php echo esc_html(get_permalink($post->ID)); ?></code>
+    </div>
+    <?php endif; endif; ?>
+
+    <?php
+    // Hiện danh sách các broker_post khác cùng broker (internal linking)
+    if ($current_parent):
+        $siblings = get_posts([
+            'post_type'   => 'broker_post',
+            'meta_key'    => '_fxt_parent_broker',
+            'meta_value'  => $current_parent,
+            'numberposts' => 20,
+            'post_status' => 'publish',
+            'exclude'     => [$post->ID],
+        ]);
+        if (!empty($siblings)):
+    ?>
+    <div style="margin-top:16px; padding:10px; background:#f9f9f9; border:1px solid #e0e0e0; border-radius:4px;">
+        <strong style="font-size:12px; color:#1e3a5f;">📝 Các bài phụ khác cùng Broker:</strong>
+        <ul style="margin:8px 0 0 16px; font-size:12px; list-style:disc;">
+            <?php foreach ($siblings as $sib): ?>
+            <li>
+                <a href="<?php echo get_edit_post_link($sib->ID); ?>"><?php echo esc_html($sib->post_title); ?></a>
+                <span style="color:#999;">— <?php echo $sib->post_status; ?></span>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <p style="font-size:11px; color:#888; margin-top:6px;">💡 Dùng danh sách này để internal link giữa các bài phụ.</p>
+    </div>
+    <?php
+        endif;
+    endif;
+}
+
+/**
+ * Save Broker Post parent
+ */
+add_action('save_post_broker_post', function ($post_id) {
+    if (!isset($_POST['fxt_broker_post_meta_nonce']) ||
+        !wp_verify_nonce($_POST['fxt_broker_post_meta_nonce'], 'fxt_broker_post_meta')) {
+        return;
+    }
+
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    if (isset($_POST['fxt_parent_broker'])) {
+        $parent_id = intval($_POST['fxt_parent_broker']);
+        if ($parent_id > 0) {
+            update_post_meta($post_id, '_fxt_parent_broker', $parent_id);
+        } else {
+            delete_post_meta($post_id, '_fxt_parent_broker');
+        }
+    }
+});
+
+// ╔═══════════════════════════════════════════════════════════════╗
 // ║  BROKER SECTIONS META BOX — wp_editor() cho content fields   ║
 // ╚═══════════════════════════════════════════════════════════════╝
 
@@ -221,7 +343,6 @@ function fxt_broker_sections_meta_box_html($post) {
         }
         .fxt-collapsible-box h5 { margin: 0 0 8px; font-size: 13px; color: #1e3a5f; }
         .fxt-section-body { margin-top: 16px; }
-        /* Loading state for AJAX */
         .fxt-section-loading {
             text-align: center; padding: 30px; color: #666; font-style: italic;
         }
@@ -270,19 +391,16 @@ function fxt_broker_sections_meta_box_html($post) {
             });
         }
 
-        // ── Add New Section via AJAX ──
         addBtn.addEventListener('click', function() {
             var idx = getNextIndex();
             addBtn.disabled = true;
             addBtn.textContent = '⏳ Loading editor...';
 
-            // Tạo placeholder
             var placeholder = document.createElement('div');
             placeholder.className = 'fxt-section-item';
             placeholder.innerHTML = '<div class="fxt-section-loading"><span class="spinner"></span> Loading WordPress Editor...</div>';
             wrap.appendChild(placeholder);
 
-            // AJAX request lấy HTML có wp_editor() từ server
             var formData = new FormData();
             formData.append('action', 'fxt_add_broker_section');
             formData.append('index', idx);
@@ -296,7 +414,6 @@ function fxt_broker_sections_meta_box_html($post) {
             .then(function(html) {
                 placeholder.outerHTML = html;
 
-                // Tìm section vừa thêm và init TinyMCE
                 var newItem = wrap.querySelector('.fxt-section-item[data-index="' + idx + '"]');
                 if (newItem) {
                     initEditorsInSection(newItem);
@@ -317,16 +434,13 @@ function fxt_broker_sections_meta_box_html($post) {
             });
         });
 
-        // ── Initialize TinyMCE for textareas in a section ──
         function initEditorsInSection(sectionEl) {
             var textareas = sectionEl.querySelectorAll('.fxt-wp-editor-area');
             textareas.forEach(function(ta) {
                 var editorId = ta.id;
                 if (!editorId) return;
 
-                // Khởi tạo TinyMCE
                 if (typeof tinymce !== 'undefined') {
-                    // Lấy settings từ editor mặc định hoặc tạo mới
                     var defaultSettings = {
                         selector: '#' + editorId,
                         theme: 'modern',
@@ -352,14 +466,12 @@ function fxt_broker_sections_meta_box_html($post) {
                         resize: true,
                         body_class: 'post-type-broker',
                         setup: function(editor) {
-                            // Sync content back to textarea trước khi submit
                             editor.on('change keyup', function() {
                                 editor.save();
                             });
                         }
                     };
 
-                    // Nếu có sẵn settings từ WP, merge
                     if (typeof tinyMCEPreInit !== 'undefined' && tinyMCEPreInit.mceInit) {
                         var existingKeys = Object.keys(tinyMCEPreInit.mceInit);
                         if (existingKeys.length > 0) {
@@ -382,7 +494,6 @@ function fxt_broker_sections_meta_box_html($post) {
                     tinymce.init(defaultSettings);
                 }
 
-                // Quicktags
                 if (typeof quicktags !== 'undefined') {
                     try {
                         quicktags({ id: editorId });
@@ -392,14 +503,12 @@ function fxt_broker_sections_meta_box_html($post) {
             });
         }
 
-        // ── Remove section ──
         function bindRemove(item) {
             var btn = item.querySelector('.fxt-remove-section');
             if (btn) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
                     if (confirm('Remove this section?')) {
-                        // Destroy TinyMCE instances
                         var editors = item.querySelectorAll('.fxt-wp-editor-area');
                         editors.forEach(function(ta) {
                             if (typeof tinymce !== 'undefined' && tinymce.get(ta.id)) {
@@ -413,19 +522,16 @@ function fxt_broker_sections_meta_box_html($post) {
             }
         }
 
-        // ── Collapse/expand section ──
         function bindCollapse(item) {
             var header = item.querySelector('.fxt-section-header');
             if (header) {
                 header.addEventListener('click', function(e) {
-                    // Không collapse khi click nút remove
                     if (e.target.closest('.fxt-remove-section')) return;
                     item.classList.toggle('fxt-collapsed');
                 });
             }
         }
 
-        // ── Sync TinyMCE → textarea trước khi submit form ──
         var postForm = document.getElementById('post');
         if (postForm) {
             postForm.addEventListener('submit', function() {
@@ -435,7 +541,6 @@ function fxt_broker_sections_meta_box_html($post) {
             });
         }
 
-        // ── Bind existing sections ──
         wrap.querySelectorAll('.fxt-section-item').forEach(function(item) {
             bindRemove(item);
             bindCollapse(item);
@@ -462,7 +567,6 @@ function fxt_render_section_fields_with_editor($index, $data) {
     $hide_text       = $data['hide_text'] ?? '';
     $num = is_numeric($index) ? ($index + 1) : '#';
 
-    // Unique editor IDs
     $content_editor_id = 'fxt_sec_content_' . $index;
     $detail_editor_id  = 'fxt_sec_detail_' . $index;
     ?>
@@ -497,7 +601,6 @@ function fxt_render_section_fields_with_editor($index, $data) {
                 </div>
             </div>
 
-            <!-- Section Content — WordPress Editor -->
             <div class="fxt-section-field fxt-section-full">
                 <label>📝 Section Content</label>
                 <div class="fxt-editor-wrap">
@@ -519,7 +622,6 @@ function fxt_render_section_fields_with_editor($index, $data) {
                 </div>
             </div>
 
-            <!-- Per-section Pros/Cons -->
             <div class="fxt-section-proscons">
                 <h5>Pros/Cons riêng cho section này (chỉ hiện khi bật checkbox ở trên)</h5>
                 <div class="fxt-section-grid">
@@ -536,7 +638,6 @@ function fxt_render_section_fields_with_editor($index, $data) {
                 </div>
             </div>
 
-            <!-- Collapsible Detail — WordPress Editor -->
             <div class="fxt-collapsible-box">
                 <h5>🔽 Collapsible Detail (chỉ hiện khi bật checkbox)</h5>
                 <div class="fxt-section-field">
@@ -575,7 +676,7 @@ function fxt_render_section_fields_with_editor($index, $data) {
                 </div>
             </div>
 
-        </div><!-- .fxt-section-body -->
+        </div>
     </div>
     <?php
 }
@@ -593,7 +694,6 @@ add_action('wp_ajax_fxt_add_broker_section', function () {
 
     $index = intval($_POST['index'] ?? 0);
 
-    // Bật output buffering vì wp_editor() print trực tiếp
     ob_start();
     fxt_render_section_fields_with_editor($index, []);
     $html = ob_get_clean();
@@ -616,7 +716,6 @@ add_action('save_post_broker', function ($post_id) {
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
     if (!current_user_can('edit_post', $post_id)) return;
 
-    // Text fields
     $text_fields = [
         'fxt_rating'      => '_fxt_rating',
         'fxt_spread'      => '_fxt_spread',
@@ -651,11 +750,9 @@ add_action('save_post_broker', function ($post_id) {
         }
     }
 
-    // === Save Broker Sections ===
     if (isset($_POST['fxt_sections']) && is_array($_POST['fxt_sections'])) {
         $sections = [];
         foreach ($_POST['fxt_sections'] as $sec) {
-            // Bỏ qua section trống (không có title)
             if (empty($sec['title']) && empty($sec['content'])) continue;
 
             $sections[] = [
@@ -707,4 +804,40 @@ function fxt_get_broker_sections($post_id) {
         $sec['cons_arr'] = array_filter(array_map('trim', explode("\n", $sec['cons'] ?? '')));
     }
     return $sections;
+}
+
+/**
+ * Helper: Lấy parent broker data cho broker_post
+ */
+function fxt_get_parent_broker($broker_post_id = null) {
+    if (!$broker_post_id) $broker_post_id = get_the_ID();
+    $parent_id = get_post_meta($broker_post_id, '_fxt_parent_broker', true);
+    if (!$parent_id) return null;
+
+    $parent = get_post($parent_id);
+    if (!$parent || $parent->post_status !== 'publish') return null;
+
+    return [
+        'ID'             => $parent->ID,
+        'title'          => $parent->post_title,
+        'permalink'      => get_permalink($parent->ID),
+        'meta'           => fxt_get_broker_meta($parent->ID),
+        'affiliate_link' => get_post_meta($parent->ID, '_fxt_affiliate_link', true) ?: get_theme_mod('fxt_default_affiliate_link', ''),
+    ];
+}
+
+/**
+ * Helper: Lấy tất cả broker_posts thuộc 1 broker
+ */
+function fxt_get_broker_sub_posts($broker_id, $exclude = 0) {
+    return get_posts([
+        'post_type'   => 'broker_post',
+        'meta_key'    => '_fxt_parent_broker',
+        'meta_value'  => $broker_id,
+        'numberposts' => -1,
+        'post_status' => 'publish',
+        'exclude'     => $exclude ? [$exclude] : [],
+        'orderby'     => 'title',
+        'order'       => 'ASC',
+    ]);
 }

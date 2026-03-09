@@ -5,6 +5,8 @@
  * Tự viết SEO cơ bản thay vì dùng plugin nặng.
  * Nếu sau này cài Rank Math/Yoast, có thể tắt file này.
  * 
+ * UPDATED: Thêm support cho broker_post (silo breadcrumbs + Article schema)
+ * 
  * @package FXTradingToday
  */
 
@@ -12,7 +14,6 @@ if (!defined('ABSPATH')) exit;
 
 /**
  * Schema Markup: Organization + WebSite (trang chủ)
- * Giúp Google hiểu site của bạn
  */
 add_action('wp_head', function () {
     if (!is_front_page()) return;
@@ -46,10 +47,10 @@ add_action('wp_head', function () {
 });
 
 /**
- * Schema Markup: Article (bài viết đơn)
+ * Schema Markup: Article (bài viết đơn + broker_post)
  */
 add_action('wp_head', function () {
-    if (!is_singular('post')) return;
+    if (!is_singular('post') && !is_singular('broker_post')) return;
 
     global $post;
 
@@ -70,7 +71,18 @@ add_action('wp_head', function () {
         'mainEntityOfPage' => get_permalink(),
     ];
 
-    // Thêm featured image nếu có
+    // Cho broker_post: thêm about (broker cha) để Google hiểu silo
+    if (is_singular('broker_post')) {
+        $parent = fxt_get_parent_broker($post->ID);
+        if ($parent) {
+            $schema['about'] = [
+                '@type' => 'FinancialService',
+                'name'  => $parent['title'],
+                'url'   => $parent['permalink'],
+            ];
+        }
+    }
+
     if (has_post_thumbnail()) {
         $img = wp_get_attachment_image_src(get_post_thumbnail_id(), 'full');
         if ($img) {
@@ -126,8 +138,6 @@ add_action('wp_head', function () {
  * Breadcrumbs - Đường dẫn điều hướng
  * Hiển thị: Home > Category > Post
  * Gọi trong template: fxt_breadcrumbs();
- * 
- * TẤT CẢ text lấy từ Customizer
  */
 function fxt_breadcrumbs() {
     if (is_front_page()) return;
@@ -151,6 +161,16 @@ function fxt_breadcrumbs() {
         echo $sep . '<a href="' . get_post_type_archive_link('broker') . '">' . $broker_archive_text . '</a>';
         echo $sep . '<span class="breadcrumb-current">' . get_the_title() . '</span>';
 
+    } elseif (is_singular('broker_post')) {
+        // Silo breadcrumb: Home > Broker Reviews > Exness > Bài phụ
+        // Handled by fxt_broker_post_breadcrumbs() — fallback here
+        $parent = fxt_get_parent_broker(get_the_ID());
+        echo $sep . '<a href="' . get_post_type_archive_link('broker') . '">' . $broker_archive_text . '</a>';
+        if ($parent) {
+            echo $sep . '<a href="' . esc_url($parent['permalink']) . '">' . esc_html($parent['title']) . '</a>';
+        }
+        echo $sep . '<span class="breadcrumb-current">' . get_the_title() . '</span>';
+
     } elseif (is_category()) {
         echo $sep . '<span class="breadcrumb-current">' . single_cat_title('', false) . '</span>';
 
@@ -170,6 +190,29 @@ function fxt_breadcrumbs() {
         echo $sep . '<span class="breadcrumb-current">' . get_the_archive_title() . '</span>';
     }
 
+    echo '</nav>';
+}
+
+/**
+ * Breadcrumbs riêng cho Broker Post (silo structure)
+ * Home > Broker Reviews > Exness > Hướng dẫn nạp tiền
+ */
+function fxt_broker_post_breadcrumbs() {
+    $sep = '<span class="breadcrumb-sep">›</span>';
+    $home_text = esc_html(get_theme_mod('fxt_breadcrumb_home', 'Home'));
+    $broker_archive_text = esc_html(get_theme_mod('fxt_breadcrumb_broker_archive', 'Broker Reviews'));
+
+    $parent = fxt_get_parent_broker(get_the_ID());
+
+    echo '<nav class="breadcrumbs" aria-label="Breadcrumb">';
+    echo '<a href="' . home_url('/') . '">' . $home_text . '</a>';
+    echo $sep . '<a href="' . get_post_type_archive_link('broker') . '">' . $broker_archive_text . '</a>';
+
+    if ($parent) {
+        echo $sep . '<a href="' . esc_url($parent['permalink']) . '">' . esc_html($parent['title']) . '</a>';
+    }
+
+    echo $sep . '<span class="breadcrumb-current">' . get_the_title() . '</span>';
     echo '</nav>';
 }
 
@@ -204,6 +247,7 @@ add_action('wp_head', function () {
 
 /**
  * Breadcrumb Schema (JSON-LD)
+ * UPDATED: Thêm support cho broker_post silo breadcrumb
  */
 add_action('wp_head', function () {
     if (is_front_page()) return;
@@ -235,6 +279,7 @@ add_action('wp_head', function () {
             'position' => $position,
             'name'     => get_the_title(),
         ];
+
     } elseif (is_singular('broker')) {
         $items[] = [
             '@type'    => 'ListItem',
@@ -242,6 +287,32 @@ add_action('wp_head', function () {
             'name'     => $broker_archive_text,
             'item'     => get_post_type_archive_link('broker'),
         ];
+        $items[] = [
+            '@type'    => 'ListItem',
+            'position' => $position,
+            'name'     => get_the_title(),
+        ];
+
+    } elseif (is_singular('broker_post')) {
+        // Silo breadcrumb schema: Home > Broker Reviews > Exness > Sub Post
+        $parent = fxt_get_parent_broker(get_the_ID());
+
+        $items[] = [
+            '@type'    => 'ListItem',
+            'position' => $position++,
+            'name'     => $broker_archive_text,
+            'item'     => get_post_type_archive_link('broker'),
+        ];
+
+        if ($parent) {
+            $items[] = [
+                '@type'    => 'ListItem',
+                'position' => $position++,
+                'name'     => $parent['title'],
+                'item'     => $parent['permalink'],
+            ];
+        }
+
         $items[] = [
             '@type'    => 'ListItem',
             'position' => $position,
