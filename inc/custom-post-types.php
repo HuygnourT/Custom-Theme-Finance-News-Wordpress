@@ -3,8 +3,13 @@
  * Custom Post Types - Đăng ký loại bài viết tùy chỉnh
  * 
  * - broker: Sàn giao dịch (pillar content)
+ *   Archive: /broker-reviews/
+ *   Single:  /broker-reviews/exness/
+ * 
  * - broker_post: Bài viết phụ hỗ trợ broker (content cluster/silo)
- *   URL: /broker-review/exness/huong-dan-nap-tien/
+ *   URL: /broker-reviews/exness/huong-dan-nap-tien/
+ * 
+ * FIX: Thống nhất tất cả URL broker dùng slug "broker-reviews"
  * 
  * @package FXTradingToday
  */
@@ -16,7 +21,7 @@ if (!defined('ABSPATH')) exit;
  */
 add_action('init', function () {
 
-    $broker_slug = get_theme_mod('fxt_broker_slug', 'broker-review');
+    $broker_slug = get_theme_mod('fxt_broker_slug', 'broker-reviews');
 
     $labels = [
         'name'               => 'Brokers',
@@ -43,11 +48,14 @@ add_action('init', function () {
         'menu_position'      => 5,
         'menu_icon'          => 'dashicons-chart-area',
         'capability_type'    => 'post',
-        'has_archive'        => 'brokers',
+
+        // ═══ FIX: Archive + Single dùng CÙNG slug ═══
+        'has_archive'        => sanitize_title($broker_slug),  // /broker-reviews/
         'rewrite'            => [
-            'slug'       => sanitize_title($broker_slug),
+            'slug'       => sanitize_title($broker_slug),      // /broker-reviews/{name}/
             'with_front' => false,
         ],
+
         'supports'           => [
             'title',
             'editor',
@@ -94,9 +102,8 @@ add_action('init', function () {
  * ╔═══════════════════════════════════════════════════════════════╗
  * ║  BROKER SUB-POST (Content Cluster / Silo)                    ║
  * ║                                                               ║
- * ║  Mục đích: Bài viết phụ hỗ trợ bài pillar broker chính       ║
- * ║  URL: /broker-review/{broker-slug}/{sub-post-slug}/           ║
- * ║  Ví dụ: /broker-review/exness/huong-dan-nap-tien/            ║
+ * ║  URL: /broker-reviews/{broker-slug}/{sub-post-slug}/          ║
+ * ║  Ví dụ: /broker-reviews/exness/huong-dan-nap-tien/           ║
  * ╚═══════════════════════════════════════════════════════════════╝
  */
 add_action('init', function () {
@@ -121,42 +128,33 @@ add_action('init', function () {
         'public'             => true,
         'publicly_queryable' => true,
         'show_ui'            => true,
-        'show_in_menu'       => 'edit.php?post_type=broker', // Hiện sub-menu dưới Brokers
+        'show_in_menu'       => 'edit.php?post_type=broker',
         'show_in_rest'       => true,
         'menu_icon'          => 'dashicons-media-text',
         'capability_type'    => 'post',
-        'has_archive'        => false, // Không cần archive page
-        'rewrite'            => false, // Tắt rewrite mặc định — ta tự viết
+        'has_archive'        => false,
+        'rewrite'            => false,
         'supports'           => [
-            'title',
-            'editor',
-            'thumbnail',
-            'excerpt',
-            'custom-fields',
-            'revisions',
+            'title', 'editor', 'thumbnail', 'excerpt',
+            'custom-fields', 'revisions',
         ],
     ]);
 });
 
 /**
  * Custom Rewrite Rules cho Broker Sub-Posts
- * 
- * URL pattern: /broker-review/exness/huong-dan-nap-tien/
- * 
- * QUAN TRỌNG: Rule này phải đăng ký SAU khi broker CPT đã register
- * và phải đặt TRƯỚC broker single rule (top priority)
+ * URL: /broker-reviews/exness/huong-dan-nap-tien/
  */
 add_action('init', function () {
-    $broker_slug = sanitize_title(get_theme_mod('fxt_broker_slug', 'broker-review'));
+    $broker_slug = sanitize_title(get_theme_mod('fxt_broker_slug', 'broker-reviews'));
 
-    // Rule: /broker-review/{broker-slug}/{sub-post-slug}/
-    // Regex capture: broker-slug = $1, sub-post-slug = $2
+    // Rule: /broker-reviews/{broker-slug}/{sub-post-slug}/
     add_rewrite_rule(
         '^' . $broker_slug . '/([^/]+)/([^/]+)/?$',
         'index.php?broker_post=$matches[2]&fxt_parent_broker=$matches[1]',
-        'top' // Priority: trước tất cả rules khác
+        'top'
     );
-}, 20); // Priority 20 = chạy sau khi CPTs đã register (priority 10)
+}, 20);
 
 /**
  * Đăng ký query vars cho sub-post
@@ -167,8 +165,8 @@ add_filter('query_vars', function ($vars) {
 });
 
 /**
- * Fix permalink cho broker_post trong admin và frontend
- * Thay thế default permalink bằng silo URL
+ * Fix permalink cho broker_post
+ * URL: /broker-reviews/exness/huong-dan-nap-tien/
  */
 add_filter('post_type_link', function ($post_link, $post) {
     if ($post->post_type !== 'broker_post') {
@@ -177,7 +175,6 @@ add_filter('post_type_link', function ($post_link, $post) {
 
     $parent_broker_id = get_post_meta($post->ID, '_fxt_parent_broker', true);
     if (!$parent_broker_id) {
-        // Chưa gán broker cha → trả URL placeholder
         return $post_link;
     }
 
@@ -186,17 +183,13 @@ add_filter('post_type_link', function ($post_link, $post) {
         return $post_link;
     }
 
-    $broker_slug = sanitize_title(get_theme_mod('fxt_broker_slug', 'broker-review'));
+    $broker_slug = sanitize_title(get_theme_mod('fxt_broker_slug', 'broker-reviews'));
 
-    // Build URL: /broker-review/exness/huong-dan-nap-tien/
     return home_url('/' . $broker_slug . '/' . $parent_broker->post_name . '/' . $post->post_name . '/');
 }, 10, 2);
 
 /**
- * Resolve broker_post query — đảm bảo WP tìm đúng post
- * 
- * Vấn đề: WP mặc định tìm broker_post bằng slug, nhưng slug có thể trùng
- * giữa các broker khác nhau. Ta cần validate thêm parent broker.
+ * Resolve broker_post query
  */
 add_action('pre_get_posts', function ($query) {
     if (is_admin() || !$query->is_main_query()) return;
@@ -206,11 +199,9 @@ add_action('pre_get_posts', function ($query) {
 
     if (!$broker_post_slug || !$parent_broker_slug) return;
 
-    // Tìm broker cha theo slug
     $parent_broker = get_page_by_path($parent_broker_slug, OBJECT, 'broker');
     if (!$parent_broker) return;
 
-    // Tìm broker_post theo slug VÀ parent broker
     $sub_posts = get_posts([
         'post_type'   => 'broker_post',
         'name'        => $broker_post_slug,
@@ -221,11 +212,10 @@ add_action('pre_get_posts', function ($query) {
     ]);
 
     if (!empty($sub_posts)) {
-        // Set query để WP load đúng post
         $query->set('post_type', 'broker_post');
         $query->set('p', $sub_posts[0]->ID);
-        $query->set('name', ''); // Clear name để dùng ID
-        $query->set('broker_post', ''); // Clear custom var
+        $query->set('name', '');
+        $query->set('broker_post', '');
     }
 });
 
@@ -257,9 +247,6 @@ add_action('manage_broker_post_posts_custom_column', function ($column, $post_id
     }
 }, 10, 2);
 
-/**
- * Admin: Sortable column
- */
 add_filter('manage_edit-broker_post_sortable_columns', function ($columns) {
     $columns['parent_broker'] = 'parent_broker';
     return $columns;

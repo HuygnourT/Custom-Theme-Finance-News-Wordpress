@@ -130,13 +130,13 @@ add_action('customize_register', function ($wp_customize) {
     ]);
 
     $wp_customize->add_setting('fxt_broker_slug', [
-        'default'           => 'broker-review',
+        'default'           => 'broker-reviews',
         'sanitize_callback' => 'sanitize_title',
         'transport'         => 'postMessage',
     ]);
     $wp_customize->add_control('fxt_broker_slug', [
         'label'       => 'Broker Single Slug',
-        'description' => 'URL: yoursite.com/<strong>{slug}</strong>/broker-name/<br>Example: broker-review, danh-gia, review',
+        'description' => 'URL: yoursite.com/<strong>{slug}</strong>/broker-name/<br>Example: broker-reviews, danh-gia, review',
         'section'     => 'fxt_broker_permalinks',
         'type'        => 'text',
     ]);
