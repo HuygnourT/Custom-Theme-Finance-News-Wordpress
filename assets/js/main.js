@@ -15,25 +15,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const mobileClose = document.getElementById('mobile-menu-close');
 
     if (mobileToggle && mobileOverlay) {
-        // Mở menu
         mobileToggle.addEventListener('click', function () {
             mobileOverlay.classList.add('active');
-            document.body.style.overflow = 'hidden'; // Ngăn scroll body
+            document.body.style.overflow = 'hidden';
         });
 
-        // Đóng menu - nút X
         if (mobileClose) {
             mobileClose.addEventListener('click', closeMenu);
         }
 
-        // Đóng menu - click bên ngoài
         mobileOverlay.addEventListener('click', function (e) {
             if (e.target === mobileOverlay) {
                 closeMenu();
             }
         });
 
-        // Đóng menu - nhấn Escape
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && mobileOverlay.classList.contains('active')) {
                 closeMenu();
@@ -46,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // ═══ SEARCH TOGGLE ═════════════════════════════
+    // ═══ SEARCH TOGGLE (fixed overlay) ═════════════
     const searchToggle = document.getElementById('search-toggle');
     const searchOverlay = document.getElementById('search-overlay');
 
@@ -54,12 +50,23 @@ document.addEventListener('DOMContentLoaded', function () {
         searchToggle.addEventListener('click', function () {
             searchOverlay.classList.toggle('active');
 
-            // Auto focus vào ô tìm kiếm
             if (searchOverlay.classList.contains('active')) {
-                const input = searchOverlay.querySelector('.search-input');
+                var input = searchOverlay.querySelector('.search-input');
                 if (input) {
-                    setTimeout(function () { input.focus(); }, 100);
+                    setTimeout(function () { input.focus(); }, 150);
                 }
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Đóng khi click backdrop (vùng tối bên ngoài form)
+        searchOverlay.addEventListener('click', function (e) {
+            // Chỉ đóng khi click vào backdrop, không phải vào form
+            if (e.target === searchOverlay) {
+                searchOverlay.classList.remove('active');
+                document.body.style.overflow = '';
             }
         });
 
@@ -67,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && searchOverlay.classList.contains('active')) {
                 searchOverlay.classList.remove('active');
+                document.body.style.overflow = '';
             }
         });
     }
@@ -75,7 +83,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const backToTop = document.getElementById('back-to-top');
 
     if (backToTop) {
-        // Hiện/ẩn nút khi scroll
         window.addEventListener('scroll', function () {
             if (window.scrollY > 400) {
                 backToTop.classList.add('visible');
@@ -84,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }, { passive: true });
 
-        // Scroll lên đầu trang
         backToTop.addEventListener('click', function () {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -124,7 +130,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ═══ EXTERNAL LINKS: mở tab mới + rel ═════════
-    // Tự động thêm target="_blank" cho link ngoài site
     document.querySelectorAll('.entry-content a').forEach(function (link) {
         if (link.hostname !== window.location.hostname) {
             link.setAttribute('target', '_blank');

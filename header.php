@@ -28,7 +28,18 @@
             <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Menu"><span class="hamburger"></span></button>
         </div>
     </div>
-    <div class="search-overlay" id="search-overlay">
+</header>
+
+<?php
+// ═══ CATEGORY BAR ═══
+if (function_exists('fxt_category_bar')) {
+    fxt_category_bar();
+}
+?>
+
+<!-- Search Overlay — nằm ngoài header + catbar để không bị che -->
+<div class="search-overlay" id="search-overlay">
+    <div class="search-overlay-inner">
         <div class="container">
             <form role="search" method="get" class="search-form" action="<?php echo esc_url(home_url('/')); ?>">
                 <input type="search" class="search-input" name="s" placeholder="<?php echo esc_attr(get_theme_mod('fxt_label_search_placeholder', 'Search articles, brokers...')); ?>" value="<?php echo get_search_query(); ?>">
@@ -36,14 +47,7 @@
             </form>
         </div>
     </div>
-</header>
-
-<?php
-// ═══ CATEGORY BAR — hiển thị ngay dưới header ═══
-if (function_exists('fxt_category_bar')) {
-    fxt_category_bar();
-}
-?>
+</div>
 
 <div class="mobile-menu-overlay" id="mobile-menu-overlay">
     <div class="mobile-menu-inner">
