@@ -95,7 +95,7 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             <?php if ($parent): ?>
             <div class="broker-post-parent-box">
                 <div class="broker-post-parent-info">
-                    <span class="broker-post-parent-label">📊 Bài viết về</span>
+                    <span class="broker-post-parent-label">📊 Full Article about</span>
                     <a href="<?php echo esc_url($parent['permalink']); ?>" class="broker-post-parent-link">
                         <strong><?php echo esc_html($parent['title']); ?></strong>
                     </a>
@@ -276,13 +276,13 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
                 $siblings = fxt_get_broker_sub_posts($parent['ID'], get_the_ID());
             ?>
             <div class="broker-post-related-silo">
-                <h3 class="section-title">📚 Thêm về <?php echo esc_html($parent['title']); ?></h3>
+                <h3 class="section-title">📚 More About <?php echo esc_html($parent['title']); ?></h3>
                 <div class="silo-links">
                     <a href="<?php echo esc_url($parent['permalink']); ?>" class="silo-link silo-link-pillar">
                         <span class="silo-link-icon">⭐</span>
                         <span class="silo-link-text">
                             <strong><?php echo esc_html(get_theme_mod('fxt_broker_review_prefix', 'Review')); ?> <?php echo esc_html($parent['title']); ?></strong>
-                            <small>Bài đánh giá tổng hợp</small>
+                            <small></small>
                         </span>
                         <span class="silo-link-arrow">→</span>
                     </a>
