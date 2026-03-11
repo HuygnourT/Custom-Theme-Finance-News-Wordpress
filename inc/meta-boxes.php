@@ -13,6 +13,17 @@
 if (!defined('ABSPATH')) exit;
 
 /**
+ * Enqueue WordPress media uploader cho broker icon upload
+ */
+add_action('admin_enqueue_scripts', function ($hook) {
+    if (!in_array($hook, ['post.php', 'post-new.php'])) return;
+    $screen = get_current_screen();
+    if ($screen && $screen->post_type === 'broker') {
+        wp_enqueue_media();
+    }
+});
+
+/**
  * Đăng ký Meta Box trong trang editor Broker
  */
 add_action('add_meta_boxes', function () {
@@ -88,6 +99,57 @@ function fxt_broker_meta_box_html($post) {
         .fxt-meta-section h4 { margin: 0 0 10px; color: #1e3a5f; }
         .fxt-meta-hint { font-size: 12px; color: #666; margin-top: 4px; font-style: italic; }
     </style>
+
+    <?php
+    // Icon data
+    $broker_icon_id  = get_post_meta($post->ID, '_fxt_broker_icon', true);
+    $broker_icon_url = $broker_icon_id ? wp_get_attachment_image_url($broker_icon_id, 'thumbnail') : '';
+    ?>
+    <div style="margin-bottom:16px;padding:14px;background:#f0f6fc;border:1px solid #c3daf5;border-radius:6px;">
+        <label style="display:block;font-weight:700;margin-bottom:10px;color:#1e3a5f;">🖼 Broker Icon / Logo (tách biệt với Featured Image)</label>
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div id="fxt-icon-preview-wrap" style="width:72px;height:72px;border:2px solid #ccd0d4;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#fff;flex-shrink:0;">
+                <img id="fxt-icon-preview-img" src="<?php echo esc_url($broker_icon_url); ?>" alt="" style="max-width:100%;max-height:100%;<?php echo $broker_icon_url ? '' : 'display:none;'; ?>">
+                <span id="fxt-icon-placeholder" style="font-size:24px;<?php echo $broker_icon_url ? 'display:none;' : ''; ?>">🖼</span>
+            </div>
+            <div>
+                <input type="hidden" id="fxt_broker_icon" name="fxt_broker_icon" value="<?php echo esc_attr($broker_icon_id); ?>">
+                <button type="button" class="button button-secondary" id="fxt-upload-icon-btn">📤 Upload Icon</button>
+                <button type="button" class="button" id="fxt-remove-icon-btn" style="margin-left:6px;color:#d63638;<?php echo $broker_icon_id ? '' : 'display:none;'; ?>">✕ Xóa Icon</button>
+                <p style="margin:8px 0 0;font-size:12px;color:#666;font-style:italic;">Ảnh vuông nhỏ (khuyến nghị 200×200px). Hiển thị trong cards, bảng so sánh, hero section.<br>Nếu để trống → sẽ dùng Featured Image làm fallback.</p>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function($) {
+        var mediaFrame;
+        $('#fxt-upload-icon-btn').on('click', function(e) {
+            e.preventDefault();
+            if (mediaFrame) { mediaFrame.open(); return; }
+            mediaFrame = wp.media({
+                title: 'Chọn Broker Icon',
+                button: { text: 'Dùng ảnh này làm icon' },
+                multiple: false,
+                library: { type: 'image' }
+            });
+            mediaFrame.on('select', function() {
+                var attachment = mediaFrame.state().get('selection').first().toJSON();
+                $('#fxt_broker_icon').val(attachment.id);
+                var url = (attachment.sizes && attachment.sizes.thumbnail) ? attachment.sizes.thumbnail.url : attachment.url;
+                $('#fxt-icon-preview-img').attr('src', url).show();
+                $('#fxt-icon-placeholder').hide();
+                $('#fxt-remove-icon-btn').show();
+            });
+            mediaFrame.open();
+        });
+        $('#fxt-remove-icon-btn').on('click', function() {
+            $('#fxt_broker_icon').val('');
+            $('#fxt-icon-preview-img').attr('src', '').hide();
+            $('#fxt-icon-placeholder').show();
+            $(this).hide();
+        });
+    })(jQuery);
+    </script>
 
     <div class="fxt-meta-grid">
         <div>
@@ -750,6 +812,16 @@ add_action('save_post_broker', function ($post_id) {
         }
     }
 
+    // Save broker icon (attachment ID)
+    if (isset($_POST['fxt_broker_icon'])) {
+        $icon_id = intval($_POST['fxt_broker_icon']);
+        if ($icon_id > 0) {
+            update_post_meta($post_id, '_fxt_broker_icon', $icon_id);
+        } else {
+            delete_post_meta($post_id, '_fxt_broker_icon');
+        }
+    }
+
     if (isset($_POST['fxt_sections']) && is_array($_POST['fxt_sections'])) {
         $sections = [];
         foreach ($_POST['fxt_sections'] as $sec) {
@@ -778,6 +850,7 @@ add_action('save_post_broker', function ($post_id) {
  */
 function fxt_get_broker_meta($post_id) {
     return [
+        'icon_id'        => get_post_meta($post_id, '_fxt_broker_icon', true),
         'rating'         => get_post_meta($post_id, '_fxt_rating', true),
         'spread'         => get_post_meta($post_id, '_fxt_spread', true),
         'leverage'       => get_post_meta($post_id, '_fxt_leverage', true),
@@ -807,6 +880,37 @@ function fxt_get_broker_sections($post_id) {
 }
 
 /**
+ * Helper: Lấy HTML ảnh icon của broker
+ * Ưu tiên: dedicated icon → featured image → initials
+ *
+ * @param int|null $post_id  ID của broker post
+ * @param string   $size     Image size slug (default 'fxt-broker-logo')
+ * @return string            HTML img tag hoặc span fallback
+ */
+function fxt_get_broker_icon_html($post_id = null, $size = 'fxt-broker-logo') {
+    if (!$post_id) $post_id = get_the_ID();
+
+    // 1. Ưu tiên dedicated icon field
+    $icon_id = get_post_meta($post_id, '_fxt_broker_icon', true);
+    if ($icon_id) {
+        return wp_get_attachment_image($icon_id, $size, false, [
+            'alt'     => esc_attr(get_the_title($post_id)),
+            'loading' => 'lazy',
+        ]);
+    }
+
+    // 2. Fallback: featured image
+    if (has_post_thumbnail($post_id)) {
+        return get_the_post_thumbnail($post_id, $size);
+    }
+
+    // 3. Fallback: 2 ký tự đầu tên broker
+    return '<span style="font-size:1.5rem;font-weight:800;color:var(--c-primary)">'
+        . esc_html(mb_substr(get_the_title($post_id), 0, 2))
+        . '</span>';
+}
+
+/**
  * Helper: Lấy parent broker data cho broker_post
  */
 function fxt_get_parent_broker($broker_post_id = null) {
@@ -823,6 +927,7 @@ function fxt_get_parent_broker($broker_post_id = null) {
         'permalink'      => get_permalink($parent->ID),
         'meta'           => fxt_get_broker_meta($parent->ID),
         'affiliate_link' => get_post_meta($parent->ID, '_fxt_affiliate_link', true) ?: get_theme_mod('fxt_default_affiliate_link', ''),
+        'icon_html'      => fxt_get_broker_icon_html($parent->ID, 'thumbnail'),
     ];
 }
 

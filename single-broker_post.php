@@ -95,6 +95,9 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             <?php if ($parent): ?>
             <div class="broker-post-parent-box">
                 <div class="broker-post-parent-info">
+                    <?php if (!empty($parent['icon_html'])): ?>
+                    <span class="broker-post-parent-icon" style="display:inline-flex;align-items:center;vertical-align:middle;width:36px;height:36px;margin-right:8px;flex-shrink:0;overflow:hidden;border-radius:4px;"><?php echo $parent['icon_html']; ?></span>
+                    <?php endif; ?>
                     <span class="broker-post-parent-label">📊 Full Article about</span>
                     <a href="<?php echo esc_url($parent['permalink']); ?>" class="broker-post-parent-link">
                         <strong><?php echo esc_html($parent['title']); ?></strong>

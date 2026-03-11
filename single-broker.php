@@ -12,7 +12,7 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
     <?php fxt_breadcrumbs(); ?>
     <div class="broker-hero-inner">
         <div class="broker-hero-info">
-            <div class="broker-hero-logo"><?php if(has_post_thumbnail()): the_post_thumbnail('fxt-broker-logo'); else: echo '<span style="font-size:1.5rem;font-weight:800;color:var(--c-primary)">'.esc_html(mb_substr(get_the_title(),0,2)).'</span>'; endif; ?></div>
+            <div class="broker-hero-logo"><?php echo fxt_get_broker_icon_html(get_the_ID()); ?></div>
             <div>
                 <h1 class="broker-hero-title"><?php echo esc_html($prefix); ?> <?php the_title(); ?> <?php echo date('Y'); ?></h1>
                 <?php if(has_excerpt()): ?><p class="broker-hero-excerpt"><?php echo get_the_excerpt(); ?></p><?php endif; ?>

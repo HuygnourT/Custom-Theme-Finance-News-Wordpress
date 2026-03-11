@@ -48,7 +48,7 @@
             <div class="broker-card <?php echo $rank === 1 ? 'featured' : ''; ?>">
                 <div class="broker-rank">#<?php echo $rank++; ?></div>
                 <div class="broker-info">
-                    <div class="broker-logo"><?php if(has_post_thumbnail()): the_post_thumbnail('fxt-broker-logo'); else: echo '<span>'.esc_html(mb_substr(get_the_title(),0,2)).'</span>'; endif; ?></div>
+                    <div class="broker-logo"><?php echo fxt_get_broker_icon_html(get_the_ID()); ?></div>
                     <div><div class="broker-name"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></div><?php echo fxt_star_rating($meta['rating']); ?></div>
                 </div>
                 <div class="broker-specs">

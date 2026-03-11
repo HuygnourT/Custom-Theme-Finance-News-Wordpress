@@ -67,11 +67,9 @@ get_header();
             <div class="broker-row-rank">#<?php echo $rank++; ?></div>
 
             <div class="broker-row-main">
-                <?php if (has_post_thumbnail()): ?>
                 <div class="broker-row-logo">
-                    <?php the_post_thumbnail('fxt-broker-logo'); ?>
+                    <?php echo fxt_get_broker_icon_html(get_the_ID()); ?>
                 </div>
-                <?php endif; ?>
                 <div>
                     <h3 class="broker-row-name">
                         <a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
