@@ -702,3 +702,24 @@ function fxt_save_intro_outro_meta($post_id) {
 
 add_action('save_post_broker_post', 'fxt_save_intro_outro_meta');
 add_action('save_post_generic_post', 'fxt_save_intro_outro_meta');
+
+
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  SEO & KEYWORDS META BOX cho broker_post + generic_post          ║
+// ║  Render dùng hàm fxt_seo_meta_box_html() từ meta-boxes.php       ║
+// ╚═══════════════════════════════════════════════════════════════════╝
+
+add_action('add_meta_boxes', function () {
+    $post_types = ['broker_post', 'generic_post'];
+    foreach ($post_types as $pt) {
+        add_meta_box(
+            'fxt_seo_keywords',
+            '🔍 SEO & Keywords',
+            'fxt_seo_meta_box_html',
+            $pt,
+            'normal',
+            'high'
+        );
+    }
+});
+// Save được xử lý bởi hook save_post trong meta-boxes.php (dùng nonce fxt_seo_meta_nonce)

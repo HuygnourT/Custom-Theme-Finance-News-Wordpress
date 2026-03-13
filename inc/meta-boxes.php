@@ -1063,6 +1063,186 @@ function fxt_save_custom_author_meta($post_id) {
 add_action('save_post_broker_post', 'fxt_save_custom_author_meta');
 add_action('save_post_generic_post', 'fxt_save_custom_author_meta');
 
+
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  SEO & KEYWORDS META BOX                                         ║
+// ║  Dùng chung: broker (pillar) + broker_post + generic_post        ║
+// ║  Fields: SEO Title, Meta Description, Focus Keyword, Secondary   ║
+// ╚═══════════════════════════════════════════════════════════════════╝
+
+add_action('add_meta_boxes', function () {
+    // Broker pillar: full-width, high priority
+    add_meta_box(
+        'fxt_seo_keywords',
+        '🔍 SEO & Keywords',
+        'fxt_seo_meta_box_html',
+        'broker',
+        'normal',
+        'high'
+    );
+});
+
+/**
+ * Render SEO meta box — dùng chung cho broker, broker_post, generic_post
+ */
+function fxt_seo_meta_box_html($post) {
+    wp_nonce_field('fxt_seo_meta_save', 'fxt_seo_meta_nonce');
+
+    $seo_title  = get_post_meta($post->ID, '_fxt_seo_title', true);
+    $seo_desc   = get_post_meta($post->ID, '_fxt_seo_desc', true);
+    $focus_kw   = get_post_meta($post->ID, '_fxt_focus_keyword', true);
+    $second_kw  = get_post_meta($post->ID, '_fxt_secondary_keywords', true);
+
+    $post_title  = get_the_title($post->ID) ?: '(Post Title)';
+    $post_url    = get_permalink($post->ID) ?: home_url('/');
+    $site_name   = get_bloginfo('name');
+
+    $serp_default_title = $post_title . ' | ' . $site_name;
+    $serp_default_desc  = 'No meta description — Google will auto-generate from page content.';
+    ?>
+    <style>
+        .fxt-serp-preview {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
+            padding: 16px 20px; margin-bottom: 20px; font-family: Arial, sans-serif;
+        }
+        .fxt-serp-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+        .fxt-serp-title { color: #1a0dab; font-size: 20px; font-weight: 400; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 600px; }
+        .fxt-serp-url   { color: #006621; font-size: 13px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 600px; }
+        .fxt-serp-desc  { color: #545454; font-size: 13px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 600px; }
+        .fxt-seo-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .fxt-seo-field  { margin-bottom: 14px; }
+        .fxt-seo-field label { display: flex; justify-content: space-between; align-items: center; font-weight: 600; margin-bottom: 5px; color: #1e3a5f; font-size: 13px; }
+        .fxt-seo-field input, .fxt-seo-field textarea { width: 100%; padding: 8px 10px; border: 1px solid #ccd0d4; border-radius: 4px; font-size: 13px; box-sizing: border-box; }
+        .fxt-seo-field input:focus, .fxt-seo-field textarea:focus { border-color: #2271b1; outline: none; box-shadow: 0 0 0 1px #2271b1; }
+        .fxt-seo-counter { font-size: 11px; font-weight: 400; color: #888; font-style: italic; }
+        .fxt-seo-hint   { font-size: 11px; color: #888; margin-top: 3px; font-style: italic; }
+        .fxt-counter-good { color: #46b450 !important; font-weight: 700; }
+        .fxt-counter-warn { color: #f0821e !important; font-weight: 700; }
+        .fxt-counter-bad  { color: #dc3232 !important; font-weight: 700; }
+        .fxt-seo-divider  { border: none; border-top: 1px solid #e8e8e8; margin: 16px 0; }
+    </style>
+
+    <!-- Google SERP Preview -->
+    <div class="fxt-serp-preview">
+        <div class="fxt-serp-label">🔍 Google Search Preview</div>
+        <div class="fxt-serp-title" id="fxt-serp-title"><?php echo esc_html($seo_title ?: $serp_default_title); ?></div>
+        <div class="fxt-serp-url"   id="fxt-serp-url"><?php echo esc_html($post_url); ?></div>
+        <div class="fxt-serp-desc"  id="fxt-serp-desc"><?php echo esc_html($seo_desc ?: $serp_default_desc); ?></div>
+    </div>
+
+    <!-- SEO Title -->
+    <div class="fxt-seo-field">
+        <label for="fxt_seo_title">
+            🏷 SEO Title
+            <span class="fxt-seo-counter" id="fxt-title-counter"><?php echo mb_strlen($seo_title); ?> / 60</span>
+        </label>
+        <input type="text" id="fxt_seo_title" name="fxt_seo_title"
+               value="<?php echo esc_attr($seo_title); ?>"
+               placeholder="<?php echo esc_attr($serp_default_title); ?>">
+        <p class="fxt-seo-hint">Để trống = dùng tiêu đề bài. Tối ưu: <strong>50–60 ký tự</strong>.</p>
+    </div>
+
+    <!-- Meta Description -->
+    <div class="fxt-seo-field">
+        <label for="fxt_seo_desc">
+            📝 Meta Description
+            <span class="fxt-seo-counter" id="fxt-desc-counter"><?php echo mb_strlen($seo_desc); ?> / 160</span>
+        </label>
+        <textarea id="fxt_seo_desc" name="fxt_seo_desc" rows="3"
+                  placeholder="Mô tả ngắn gọn hiển thị trên Google. Để trống = dùng post excerpt."><?php echo esc_textarea($seo_desc); ?></textarea>
+        <p class="fxt-seo-hint">Tối ưu: <strong>150–160 ký tự</strong>.</p>
+    </div>
+
+    <hr class="fxt-seo-divider">
+
+    <!-- Keywords -->
+    <div class="fxt-seo-grid">
+        <div class="fxt-seo-field">
+            <label for="fxt_focus_keyword">🎯 Focus Keyword (Primary)</label>
+            <input type="text" id="fxt_focus_keyword" name="fxt_focus_keyword"
+                   value="<?php echo esc_attr($focus_kw); ?>"
+                   placeholder="e.g. Exness broker review">
+            <p class="fxt-seo-hint">Keyword chính trang này nhắm đến.</p>
+        </div>
+        <div class="fxt-seo-field">
+            <label for="fxt_secondary_keywords">🔑 Secondary Keywords (mỗi dòng 1 từ)</label>
+            <textarea id="fxt_secondary_keywords" name="fxt_secondary_keywords" rows="4"
+                      placeholder="exness review&#10;exness spread&#10;exness leverage&#10;sàn exness uy tín"><?php echo esc_textarea($second_kw); ?></textarea>
+            <p class="fxt-seo-hint">LSI keywords / long-tail variations.</p>
+        </div>
+    </div>
+
+    <script>
+    (function($) {
+        var defaultTitle = <?php echo json_encode($serp_default_title); ?>;
+        var defaultDesc  = <?php echo json_encode($serp_default_desc); ?>;
+
+        function updateCounter(val, id, min, max) {
+            var len = val.length, el = document.getElementById(id);
+            if (!el) return;
+            el.textContent = len + ' / ' + max;
+            el.className = 'fxt-seo-counter';
+            if (len >= min && len <= max) el.classList.add('fxt-counter-good');
+            else if (len > max)           el.classList.add('fxt-counter-bad');
+            else if (len > 0)             el.classList.add('fxt-counter-warn');
+        }
+
+        function updatePreview() {
+            $('#fxt-serp-title').text($('#fxt_seo_title').val().trim() || defaultTitle);
+            $('#fxt-serp-desc').text($('#fxt_seo_desc').val().trim()   || defaultDesc);
+        }
+
+        $('#fxt_seo_title').on('input', function() {
+            updateCounter(this.value, 'fxt-title-counter', 50, 60);
+            updatePreview();
+        });
+        $('#fxt_seo_desc').on('input', function() {
+            updateCounter(this.value, 'fxt-desc-counter', 150, 160);
+            updatePreview();
+        });
+
+        // Init
+        updateCounter($('#fxt_seo_title').val(), 'fxt-title-counter', 50, 60);
+        updateCounter($('#fxt_seo_desc').val(),  'fxt-desc-counter',  150, 160);
+    })(jQuery);
+    </script>
+    <?php
+}
+
+/**
+ * Save SEO meta (hook trên save_post — áp dụng cho mọi post type có nonce này)
+ */
+add_action('save_post', function ($post_id) {
+    if (!isset($_POST['fxt_seo_meta_nonce']) ||
+        !wp_verify_nonce($_POST['fxt_seo_meta_nonce'], 'fxt_seo_meta_save')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    $text_fields = [
+        'fxt_seo_title'      => '_fxt_seo_title',
+        'fxt_focus_keyword'  => '_fxt_focus_keyword',
+    ];
+    $textarea_fields = [
+        'fxt_seo_desc'            => '_fxt_seo_desc',
+        'fxt_secondary_keywords'  => '_fxt_secondary_keywords',
+    ];
+
+    foreach ($text_fields as $key => $meta) {
+        if (isset($_POST[$key])) {
+            $val = sanitize_text_field($_POST[$key]);
+            $val ? update_post_meta($post_id, $meta, $val) : delete_post_meta($post_id, $meta);
+        }
+    }
+    foreach ($textarea_fields as $key => $meta) {
+        if (isset($_POST[$key])) {
+            $val = sanitize_textarea_field($_POST[$key]);
+            $val ? update_post_meta($post_id, $meta, $val) : delete_post_meta($post_id, $meta);
+        }
+    }
+});
+
 /**
  * Helper: Lấy custom author data
  * Dùng trong template: $author = fxt_get_custom_author();

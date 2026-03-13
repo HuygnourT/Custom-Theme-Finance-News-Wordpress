@@ -12,6 +12,52 @@
 
 if (!defined('ABSPATH')) exit;
 
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  CUSTOM SEO TITLE / META DESCRIPTION / KEYWORDS                  ║
+// ╚═══════════════════════════════════════════════════════════════════╝
+
+/**
+ * Override <title> tag với custom SEO Title từ meta box
+ */
+add_filter('pre_get_document_title', function ($title) {
+    if (!is_singular()) return $title;
+    global $post;
+    $seo_title = get_post_meta($post->ID, '_fxt_seo_title', true);
+    if ($seo_title) return esc_html($seo_title);
+    return $title;
+});
+
+/**
+ * Output <meta name="description"> + <meta name="keywords"> vào <head>
+ * Priority 1 = chạy trước OG tags
+ */
+add_action('wp_head', function () {
+    if (!is_singular()) return;
+    global $post;
+
+    // Meta Description
+    $seo_desc = get_post_meta($post->ID, '_fxt_seo_desc', true);
+    if (!$seo_desc) {
+        $seo_desc = has_excerpt()
+            ? get_the_excerpt()
+            : wp_trim_words(strip_tags($post->post_content), 30);
+    }
+    if ($seo_desc) {
+        echo '<meta name="description" content="' . esc_attr(wp_strip_all_tags($seo_desc)) . '">' . "\n";
+    }
+
+    // Meta Keywords (focus + secondary)
+    $focus_kw  = get_post_meta($post->ID, '_fxt_focus_keyword', true);
+    $second_kw = get_post_meta($post->ID, '_fxt_secondary_keywords', true);
+    $all_kw = array_filter(array_merge(
+        $focus_kw  ? [trim($focus_kw)] : [],
+        $second_kw ? array_map('trim', preg_split('/[\r\n,]+/', $second_kw)) : []
+    ));
+    if ($all_kw) {
+        echo '<meta name="keywords" content="' . esc_attr(implode(', ', $all_kw)) . '">' . "\n";
+    }
+}, 1);
+
 /**
  * Schema Markup: Organization + WebSite (trang chủ)
  */
@@ -70,6 +116,23 @@ add_action('wp_head', function () {
         ],
         'mainEntityOfPage' => get_permalink(),
     ];
+
+    // Thêm keywords vào Article schema
+    $focus_kw  = get_post_meta($post->ID, '_fxt_focus_keyword', true);
+    $second_kw = get_post_meta($post->ID, '_fxt_secondary_keywords', true);
+    $kw_arr = array_filter(array_merge(
+        $focus_kw  ? [trim($focus_kw)] : [],
+        $second_kw ? array_map('trim', preg_split('/[\r\n,]+/', $second_kw)) : []
+    ));
+    if ($kw_arr) {
+        $schema['keywords'] = implode(', ', $kw_arr);
+    }
+
+    // Custom meta description
+    $seo_desc = get_post_meta($post->ID, '_fxt_seo_desc', true);
+    if ($seo_desc) {
+        $schema['description'] = wp_strip_all_tags($seo_desc);
+    }
 
     // Cho broker_post: thêm about (broker cha) để Google hiểu silo
     if (is_singular('broker_post')) {
@@ -218,12 +281,16 @@ function fxt_broker_post_breadcrumbs() {
 
 /**
  * Open Graph meta tags (chia sẻ Facebook, Zalo)
+ * Ưu tiên dùng custom SEO title/description nếu có
  */
 add_action('wp_head', function () {
     if (is_singular()) {
         global $post;
-        $title = get_the_title();
-        $desc  = has_excerpt() ? get_the_excerpt() : wp_trim_words(strip_tags($post->post_content), 30);
+        // Dùng custom SEO data nếu có
+        $seo_title = get_post_meta($post->ID, '_fxt_seo_title', true);
+        $seo_desc  = get_post_meta($post->ID, '_fxt_seo_desc', true);
+        $title = $seo_title ?: get_the_title();
+        $desc  = $seo_desc  ?: (has_excerpt() ? get_the_excerpt() : wp_trim_words(strip_tags($post->post_content), 30));
         $url   = get_permalink();
         $image = has_post_thumbnail() ? get_the_post_thumbnail_url($post->ID, 'fxt-hero') : '';
     } else {
