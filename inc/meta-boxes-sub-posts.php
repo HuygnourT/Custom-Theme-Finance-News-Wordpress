@@ -723,3 +723,128 @@ add_action('add_meta_boxes', function () {
     }
 });
 // Save được xử lý bởi hook save_post trong meta-boxes.php (dùng nonce fxt_seo_meta_nonce)
+
+
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  SLUG (URL) META BOX — chỉ cho broker_post                       ║
+// ╚═══════════════════════════════════════════════════════════════════╝
+
+add_action('add_meta_boxes', function () {
+    add_meta_box(
+        'fxt_broker_post_slug',
+        '🔗 Slug (URL đường dẫn)',
+        'fxt_broker_post_slug_html',
+        'broker_post',
+        'side',
+        'high'
+    );
+});
+
+function fxt_broker_post_slug_html($post) {
+    wp_nonce_field('fxt_slug_save', 'fxt_slug_nonce');
+
+    $current_slug = $post->post_name ?: sanitize_title($post->post_title);
+    $broker_slug  = sanitize_title(get_theme_mod('fxt_broker_slug', 'broker-reviews'));
+
+    // Lấy slug của broker cha
+    $parent_id   = get_post_meta($post->ID, '_fxt_parent_broker', true);
+    $parent_slug = '';
+    if ($parent_id) {
+        $parent      = get_post($parent_id);
+        $parent_slug = $parent ? $parent->post_name : '';
+    }
+
+    $base_url = home_url('/' . $broker_slug . '/' . ($parent_slug ?: '{broker-slug}') . '/');
+    ?>
+    <style>
+        .fxt-slug-field { margin-bottom: 10px; }
+        .fxt-slug-field label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 4px; color: #1e3a5f; }
+        .fxt-slug-input { width: 100%; padding: 6px 10px; border: 1px solid #ccd0d4; border-radius: 4px; font-size: 13px; font-family: monospace; box-sizing: border-box; }
+        .fxt-slug-input:focus { border-color: #2271b1; outline: none; box-shadow: 0 0 0 1px #2271b1; }
+        .fxt-slug-preview { margin-top: 10px; padding: 8px 10px; background: #f0f6fc; border: 1px solid #c3daf5; border-radius: 4px; font-size: 11px; word-break: break-all; line-height: 1.6; }
+        .fxt-slug-preview .slug-base { color: #555; }
+        .fxt-slug-preview .slug-part { color: #1a0dab; font-weight: 700; }
+        .fxt-slug-warn { margin-top: 8px; padding: 7px 9px; background: #fff8e5; border-left: 3px solid #f0821e; font-size: 11px; color: #555; line-height: 1.5; }
+    </style>
+
+    <div class="fxt-slug-field">
+        <label for="fxt_post_slug">Slug hiện tại:</label>
+        <input type="text"
+               id="fxt_post_slug"
+               name="fxt_post_slug"
+               class="fxt-slug-input"
+               value="<?php echo esc_attr($current_slug); ?>"
+               placeholder="ten-bai-viet">
+    </div>
+
+    <div class="fxt-slug-preview" id="fxt-slug-preview">
+        <span class="slug-base"><?php echo esc_html($base_url); ?></span><span class="slug-part" id="fxt-slug-part"><?php echo esc_html($current_slug ?: 'ten-bai-viet'); ?></span><span class="slug-base">/</span>
+    </div>
+
+    <?php if ($post->post_status === 'publish'): ?>
+    <div class="fxt-slug-warn">
+        ⚠️ Bài đã publish. Đổi slug sẽ <strong>thay đổi URL</strong> — các link cũ sẽ 404.
+    </div>
+    <?php endif; ?>
+
+    <script>
+    (function() {
+        var input   = document.getElementById('fxt_post_slug');
+        var preview = document.getElementById('fxt-slug-part');
+        if (!input || !preview) return;
+
+        input.addEventListener('input', function() {
+            // Sanitise live: chữ thường, gạch ngang, không dấu cách
+            var val = this.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-_]/g, '');
+            preview.textContent = val || 'ten-bai-viet';
+        });
+
+        // Khi blur: chuẩn hoá lại giá trị trong input
+        input.addEventListener('blur', function() {
+            this.value = this.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-_]/g, '');
+            preview.textContent = this.value || 'ten-bai-viet';
+        });
+    })();
+    </script>
+    <?php
+}
+
+/**
+ * Save slug của broker_post
+ * Dùng wpdb trực tiếp để tránh recursion khi gọi wp_update_post trong save_post
+ */
+add_action('save_post_broker_post', function ($post_id) {
+    if (!isset($_POST['fxt_slug_nonce']) ||
+        !wp_verify_nonce($_POST['fxt_slug_nonce'], 'fxt_slug_save')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+    if (!isset($_POST['fxt_post_slug'])) return;
+
+    $new_slug = sanitize_title(trim($_POST['fxt_post_slug']));
+    if (!$new_slug) return;
+
+    $post = get_post($post_id);
+    if (!$post || $post->post_name === $new_slug) return;
+
+    // Đảm bảo slug duy nhất trong cùng post type
+    $unique_slug = wp_unique_post_slug(
+        $new_slug,
+        $post_id,
+        $post->post_status,
+        'broker_post',
+        $post->post_parent
+    );
+
+    global $wpdb;
+    $wpdb->update(
+        $wpdb->posts,
+        ['post_name' => $unique_slug],
+        ['ID'        => $post_id],
+        ['%s'],
+        ['%d']
+    );
+
+    clean_post_cache($post_id);
+});
