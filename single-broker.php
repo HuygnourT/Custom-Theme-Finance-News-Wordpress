@@ -6,6 +6,9 @@ $prefix = get_theme_mod('fxt_broker_review_prefix', 'Review');
 $lbl_open = get_theme_mod('fxt_broker_open_account', 'Open Account');
 $default_show = get_theme_mod('fxt_broker_section_show', '▼ Show details');
 $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
+
+// NEW: Custom author
+$custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_author(get_the_ID()) : null;
 ?>
 
 <div class="broker-hero"><div class="container">
@@ -16,6 +19,24 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             <div>
                 <h1 class="broker-hero-title"><?php echo esc_html($prefix); ?> <?php the_title(); ?> <?php echo date('Y'); ?></h1>
                 <?php if(has_excerpt()): ?><p class="broker-hero-excerpt"><?php echo get_the_excerpt(); ?></p><?php endif; ?>
+
+                <?php // NEW: Post meta with custom author support ?>
+                <?php if ($custom_author): ?>
+                <div class="post-meta" style="margin-top:12px">
+                    <span style="color:rgba(255,255,255,.5)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <?php echo get_the_date(); ?>
+                    </span>
+                    <span style="color:rgba(255,255,255,.5)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <?php echo esc_html($custom_author['name']); ?>
+                        <?php if (!empty($custom_author['title'])): ?>
+                            <em style="opacity:.7"> — <?php echo esc_html($custom_author['title']); ?></em>
+                        <?php endif; ?>
+                    </span>
+                </div>
+                <?php endif; ?>
+
             </div>
         </div>
         <div class="broker-rating-box">
@@ -186,6 +207,41 @@ if (!empty($sections)):
             <p><?php echo esc_html(get_theme_mod('fxt_broker_cta_desc', 'Open an account in just a few minutes and start trading today.')); ?></p>
             <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Get Started →')); ?></a>
         </div>
+
+        <!-- ═══ NEW: AUTHOR BOX — Custom author hoặc WP default ═══ -->
+        <?php if ($custom_author): ?>
+        <div class="author-box">
+            <div class="author-avatar">
+                <?php if (!empty($custom_author['avatar'])): ?>
+                    <img src="<?php echo esc_url($custom_author['avatar']); ?>" alt="<?php echo esc_attr($custom_author['name']); ?>" width="64" height="64" style="border-radius:50%">
+                <?php else: ?>
+                    <?php echo get_avatar(get_the_author_meta('ID'), 64); ?>
+                <?php endif; ?>
+            </div>
+            <div class="author-info">
+                <h4 class="author-name"><?php echo esc_html($custom_author['name']); ?></h4>
+                <?php if (!empty($custom_author['title'])): ?>
+                <p class="author-title"><?php echo esc_html($custom_author['title']); ?></p>
+                <?php endif; ?>
+                <p class="author-bio"><?php
+                    if (!empty($custom_author['bio'])) {
+                        echo esc_html($custom_author['bio']);
+                    } else {
+                        echo get_the_author_meta('description');
+                    }
+                ?></p>
+            </div>
+        </div>
+        <?php else: ?>
+        <div class="author-box">
+            <div class="author-avatar"><?php echo get_avatar(get_the_author_meta('ID'), 64); ?></div>
+            <div class="author-info">
+                <h4 class="author-name"><?php the_author(); ?></h4>
+                <p class="author-bio"><?php echo get_the_author_meta('description'); ?></p>
+            </div>
+        </div>
+        <?php endif; ?>
+
     </div>
 
     <aside class="sidebar" role="complementary">

@@ -6,6 +6,7 @@
  * FIX 2: Lưu pros/cons dùng sanitize_textarea_field để giữ line breaks
  * NEW: Broker Sections với wp_editor() cho content & hidden detail
  * NEW: Broker Post meta box (parent broker selector)
+ * NEW: Custom Author cho broker (pillar) + broker_post + generic_post
  * 
  * @package FXTradingToday
  */
@@ -882,15 +883,10 @@ function fxt_get_broker_sections($post_id) {
 /**
  * Helper: Lấy HTML ảnh icon của broker
  * Ưu tiên: dedicated icon → featured image → initials
- *
- * @param int|null $post_id  ID của broker post
- * @param string   $size     Image size slug (default 'fxt-broker-logo')
- * @return string            HTML img tag hoặc span fallback
  */
 function fxt_get_broker_icon_html($post_id = null, $size = 'fxt-broker-logo') {
     if (!$post_id) $post_id = get_the_ID();
 
-    // 1. Ưu tiên dedicated icon field
     $icon_id = get_post_meta($post_id, '_fxt_broker_icon', true);
     if ($icon_id) {
         return wp_get_attachment_image($icon_id, $size, false, [
@@ -899,12 +895,10 @@ function fxt_get_broker_icon_html($post_id = null, $size = 'fxt-broker-logo') {
         ]);
     }
 
-    // 2. Fallback: featured image
     if (has_post_thumbnail($post_id)) {
         return get_the_post_thumbnail($post_id, $size);
     }
 
-    // 3. Fallback: 2 ký tự đầu tên broker
     return '<span style="font-size:1.5rem;font-weight:800;color:var(--c-primary)">'
         . esc_html(mb_substr(get_the_title($post_id), 0, 2))
         . '</span>';
@@ -948,25 +942,22 @@ function fxt_get_broker_sub_posts($broker_id, $exclude = 0) {
 }
 
 
-add_action('add_meta_boxes', function () {
-    add_meta_box(
-        'fxt_broker_post_author',
-        '✏️ Custom Author (Tác giả hiển thị)',
-        'fxt_broker_post_author_html',
-        'broker_post',
-        'side',
-        'default'
-    );
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  CUSTOM AUTHOR META BOX — broker + broker_post + generic_post    ║
+// ╚═══════════════════════════════════════════════════════════════════╝
 
-    // Cũng thêm cho generic_post
-    add_meta_box(
-        'fxt_generic_post_author',
-        '✏️ Custom Author (Tác giả hiển thị)',
-        'fxt_broker_post_author_html',
-        'generic_post',
-        'side',
-        'default'
-    );
+add_action('add_meta_boxes', function () {
+    $author_post_types = ['broker', 'broker_post', 'generic_post'];
+    foreach ($author_post_types as $pt) {
+        add_meta_box(
+            'fxt_custom_author_' . $pt,
+            '✏️ Custom Author (Tác giả hiển thị)',
+            'fxt_broker_post_author_html',
+            $pt,
+            'side',
+            'default'
+        );
+    }
 });
 
 function fxt_broker_post_author_html($post) {
@@ -1060,6 +1051,7 @@ function fxt_save_custom_author_meta($post_id) {
     }
 }
 
+add_action('save_post_broker', 'fxt_save_custom_author_meta');
 add_action('save_post_broker_post', 'fxt_save_custom_author_meta');
 add_action('save_post_generic_post', 'fxt_save_custom_author_meta');
 
@@ -1067,11 +1059,9 @@ add_action('save_post_generic_post', 'fxt_save_custom_author_meta');
 // ╔═══════════════════════════════════════════════════════════════════╗
 // ║  SEO & KEYWORDS META BOX                                         ║
 // ║  Dùng chung: broker (pillar) + broker_post + generic_post        ║
-// ║  Fields: SEO Title, Meta Description, Focus Keyword, Secondary   ║
 // ╚═══════════════════════════════════════════════════════════════════╝
 
 add_action('add_meta_boxes', function () {
-    // Broker pillar: full-width, high priority
     add_meta_box(
         'fxt_seo_keywords',
         '🔍 SEO & Keywords',
@@ -1083,7 +1073,7 @@ add_action('add_meta_boxes', function () {
 });
 
 /**
- * Render SEO meta box — dùng chung cho broker, broker_post, generic_post
+ * Render SEO meta box
  */
 function fxt_seo_meta_box_html($post) {
     wp_nonce_field('fxt_seo_meta_save', 'fxt_seo_meta_nonce');
@@ -1122,7 +1112,6 @@ function fxt_seo_meta_box_html($post) {
         .fxt-seo-divider  { border: none; border-top: 1px solid #e8e8e8; margin: 16px 0; }
     </style>
 
-    <!-- Google SERP Preview -->
     <div class="fxt-serp-preview">
         <div class="fxt-serp-label">🔍 Google Search Preview</div>
         <div class="fxt-serp-title" id="fxt-serp-title"><?php echo esc_html($seo_title ?: $serp_default_title); ?></div>
@@ -1130,7 +1119,6 @@ function fxt_seo_meta_box_html($post) {
         <div class="fxt-serp-desc"  id="fxt-serp-desc"><?php echo esc_html($seo_desc ?: $serp_default_desc); ?></div>
     </div>
 
-    <!-- SEO Title -->
     <div class="fxt-seo-field">
         <label for="fxt_seo_title">
             🏷 SEO Title
@@ -1142,7 +1130,6 @@ function fxt_seo_meta_box_html($post) {
         <p class="fxt-seo-hint">Để trống = dùng tiêu đề bài. Tối ưu: <strong>50–60 ký tự</strong>.</p>
     </div>
 
-    <!-- Meta Description -->
     <div class="fxt-seo-field">
         <label for="fxt_seo_desc">
             📝 Meta Description
@@ -1155,7 +1142,6 @@ function fxt_seo_meta_box_html($post) {
 
     <hr class="fxt-seo-divider">
 
-    <!-- Keywords -->
     <div class="fxt-seo-grid">
         <div class="fxt-seo-field">
             <label for="fxt_focus_keyword">🎯 Focus Keyword (Primary)</label>
@@ -1201,7 +1187,6 @@ function fxt_seo_meta_box_html($post) {
             updatePreview();
         });
 
-        // Init
         updateCounter($('#fxt_seo_title').val(), 'fxt-title-counter', 50, 60);
         updateCounter($('#fxt_seo_desc').val(),  'fxt-desc-counter',  150, 160);
     })(jQuery);
@@ -1210,7 +1195,7 @@ function fxt_seo_meta_box_html($post) {
 }
 
 /**
- * Save SEO meta (hook trên save_post — áp dụng cho mọi post type có nonce này)
+ * Save SEO meta
  */
 add_action('save_post', function ($post_id) {
     if (!isset($_POST['fxt_seo_meta_nonce']) ||
@@ -1245,14 +1230,11 @@ add_action('save_post', function ($post_id) {
 
 /**
  * Helper: Lấy custom author data
- * Dùng trong template: $author = fxt_get_custom_author();
  */
 function fxt_get_custom_author($post_id = null) {
     if (!$post_id) $post_id = get_the_ID();
 
     $custom_name = get_post_meta($post_id, '_fxt_custom_author_name', true);
-
-    // Nếu không có custom name → trả về null (dùng author mặc định)
     if (!$custom_name) return null;
 
     return [
