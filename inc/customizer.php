@@ -241,7 +241,7 @@ add_action('customize_register', function ($wp_customize) {
     // ╚═══════════════════════════════════════════════╝
     $wp_customize->add_section('fxt_social', ['title' => '🌐 Social Media', 'priority' => 35]);
 
-    foreach (['facebook' => 'Facebook URL', 'telegram' => 'Telegram URL', 'youtube' => 'YouTube URL', 'tiktok' => 'TikTok URL'] as $key => $label) {
+    foreach (['facebook' => 'Facebook URL', 'telegram' => 'Telegram URL', 'youtube' => 'YouTube URL', 'tiktok' => 'TikTok URL', 'linkedin' => 'LinkedIn URL'] as $key => $label) {
         $wp_customize->add_setting("fxt_social_{$key}", ['default' => '', 'sanitize_callback' => 'esc_url_raw']);
         $wp_customize->add_control("fxt_social_{$key}", ['label' => $label, 'section' => 'fxt_social', 'type' => 'url']);
     }

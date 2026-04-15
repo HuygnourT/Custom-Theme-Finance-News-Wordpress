@@ -5,7 +5,7 @@
             <div class="footer-logo"><span class="site-title-fx">FX</span><span class="site-title-text">Trading Today</span></div>
             <p class="footer-about"><?php echo esc_html(get_theme_mod('fxt_footer_about', 'Delivering reliable Forex education, broker reviews, and trading strategies to help investors make informed decisions.')); ?></p>
             <div class="footer-social">
-                <?php foreach(['facebook'=>'f','telegram'=>'✈','youtube'=>'▶','tiktok'=>'♪'] as $k=>$icon): $url=get_theme_mod("fxt_social_{$k}"); if($url): ?>
+                <?php foreach(['facebook'=>'f','telegram'=>'✈','youtube'=>'▶','tiktok'=>'♪','linkedin' => 'in'] as $k=>$icon): $url=get_theme_mod("fxt_social_{$k}"); if($url): ?>
                 <a href="<?php echo esc_url($url); ?>" class="social-link" target="_blank" rel="noopener"><?php echo $icon; ?></a>
                 <?php endif; endforeach; ?>
             </div>
