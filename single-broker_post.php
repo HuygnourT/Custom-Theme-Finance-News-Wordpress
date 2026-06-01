@@ -274,37 +274,6 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             </div>
             <?php endif; ?>
 
-            <!-- Internal Links: Bài pillar + các bài phụ khác -->
-            <?php if ($parent):
-                $siblings = fxt_get_broker_sub_posts($parent['ID'], get_the_ID());
-            ?>
-            <div class="broker-post-related-silo">
-                <h3 class="section-title">📚 More About <?php echo esc_html($parent['title']); ?></h3>
-                <div class="silo-links">
-                    <a href="<?php echo esc_url($parent['permalink']); ?>" class="silo-link silo-link-pillar">
-                        <span class="silo-link-icon">⭐</span>
-                        <span class="silo-link-text">
-                            <strong><?php echo esc_html(get_theme_mod('fxt_broker_review_prefix', 'Review')); ?> <?php echo esc_html($parent['title']); ?></strong>
-                            <small></small>
-                        </span>
-                        <span class="silo-link-arrow">→</span>
-                    </a>
-                    <?php foreach ($siblings as $sib): ?>
-                    <a href="<?php echo get_permalink($sib->ID); ?>" class="silo-link">
-                        <span class="silo-link-icon">📝</span>
-                        <span class="silo-link-text">
-                            <strong><?php echo esc_html($sib->post_title); ?></strong>
-                            <?php if (has_excerpt($sib->ID)): ?>
-                            <small><?php echo esc_html(wp_trim_words(get_the_excerpt($sib->ID), 12)); ?></small>
-                            <?php endif; ?>
-                        </span>
-                        <span class="silo-link-arrow">→</span>
-                    </a>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <?php endif; ?>
-
             <!-- ═══ AUTHOR BOX: Custom author hoặc WP default ═══ -->
             <?php if ($custom_author): ?>
             <div class="author-box">

@@ -6,6 +6,7 @@ define('FXT_URI', get_template_directory_uri());
 
 require_once FXT_DIR . '/inc/theme-setup.php';
 require_once FXT_DIR . '/inc/enqueue.php';
+require_once FXT_DIR . '/inc/performance.php';
 require_once FXT_DIR . '/inc/custom-post-types.php';
 require_once FXT_DIR . '/inc/generic-post-types.php';     // NEW: Generic sub-posts CPT
 require_once FXT_DIR . '/inc/meta-boxes.php';

@@ -694,3 +694,101 @@ body.admin-bar .broker-section{scroll-margin-top:calc(var(--header-h) + 92px)}
     font-weight: 600;
     margin-bottom: 4px;
 }
+
+
+/* ╔═══════════════════════════════════════════════════╗
+   ║  PHẦN 23: SIDEBAR RELATED POSTS (broker_post)    ║
+   ╚═══════════════════════════════════════════════════╝ */
+.sidebar-related-list li {
+    padding: 10px 0 !important;
+}
+.sidebar-related-list li a {
+    display: flex !important;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: .85rem !important;
+    line-height: 1.4;
+    color: var(--c-text);
+}
+.sidebar-related-list li a:hover {
+    color: var(--c-primary);
+}
+.sidebar-related-icon {
+    flex-shrink: 0;
+    font-size: .95rem;
+    margin-top: 1px;
+}
+.sidebar-related-pillar {
+    background: var(--c-primary-light);
+    margin: 0 -8px 8px;
+    padding: 12px 8px !important;
+    border-radius: var(--r-sm);
+    border-bottom: none !important;
+}
+.sidebar-related-pillar a strong {
+    font-weight: 600;
+    color: var(--c-primary);
+}
+
+/* ╔═══════════════════════════════════════════════════╗
+   ║  FIX: Hình ảnh trong Broker Sections              ║
+   ╚═══════════════════════════════════════════════════╝ */
+
+/* Ảnh trong section content & collapsible detail — hiển thị đúng kích thước */
+.broker-section-content img,
+.broker-section-detail-content img,
+.sub-post-section .entry-content img,
+.sub-post-intro img,
+.sub-post-outro img {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    object-fit: initial;
+    padding: 0;
+}
+
+/* Fix WP editor chèn ảnh có class aligncenter, alignleft, alignright */
+.broker-section-content .aligncenter,
+.broker-section-detail-content .aligncenter,
+.sub-post-section .entry-content .aligncenter {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+.broker-section-content .alignleft,
+.broker-section-detail-content .alignleft {
+    float: left;
+    margin: 8px 24px 16px 0;
+}
+
+.broker-section-content .alignright,
+.broker-section-detail-content .alignright {
+    float: right;
+    margin: 8px 0 16px 24px;
+}
+
+/* Ảnh trong figure (WP block editor wrap ảnh trong <figure>) */
+.broker-section-content figure,
+.broker-section-detail-content figure,
+.sub-post-section .entry-content figure {
+    max-width: 100%;
+    margin: 24px 0;
+}
+
+.broker-section-content figure img,
+.broker-section-detail-content figure img,
+.sub-post-section .entry-content figure img {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+}
+
+/* Fix: ảnh bị bóp bởi parent flex/grid container */
+.broker-section-content .entry-content,
+.broker-section-detail-content,
+.sub-post-section .entry-content {
+    overflow: visible;
+    min-width: 0;
+}

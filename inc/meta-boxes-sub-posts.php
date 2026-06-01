@@ -848,3 +848,208 @@ add_action('save_post_broker_post', function ($post_id) {
 
     clean_post_cache($post_id);
 });
+
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  RELATED POSTS META BOX — Custom related posts cho sidebar       ║
+// ╚═══════════════════════════════════════════════════════════════════╝
+
+add_action('add_meta_boxes', function () {
+    add_meta_box(
+        'fxt_sub_related_posts',
+        '🔗 Related Posts (Sidebar)',
+        'fxt_sub_related_posts_html',
+        'broker_post',
+        'side',
+        'default'
+    );
+});
+
+function fxt_sub_related_posts_html($post) {
+    wp_nonce_field('fxt_sub_related_meta', 'fxt_sub_related_nonce');
+
+    $hide        = get_post_meta($post->ID, '_fxt_sub_related_hide', true);
+    $related_ids = get_post_meta($post->ID, '_fxt_sub_related_ids', true);
+    if (!is_array($related_ids)) $related_ids = [];
+
+    $custom_title = get_post_meta($post->ID, '_fxt_sub_related_title', true);
+
+    // Lấy parent broker
+    $parent_id = get_post_meta($post->ID, '_fxt_parent_broker', true);
+    $siblings  = [];
+    if ($parent_id) {
+        $siblings = get_posts([
+            'post_type'   => 'broker_post',
+            'meta_key'    => '_fxt_parent_broker',
+            'meta_value'  => $parent_id,
+            'numberposts' => -1,
+            'post_status' => 'publish',
+            'exclude'     => [$post->ID],
+            'orderby'     => 'title',
+            'order'       => 'ASC',
+        ]);
+    }
+    ?>
+    <style>
+        .fxt-rel-hide-wrap { padding: 8px; background: #fff8e5; border-left: 3px solid #f0821e; border-radius: 3px; margin-bottom: 12px; }
+        .fxt-rel-field { margin-bottom: 12px; }
+        .fxt-rel-field label.fxt-rel-label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 4px; color: #1e3a5f; }
+        .fxt-rel-field input[type="text"] { width: 100%; padding: 6px 10px; border: 1px solid #ccd0d4; border-radius: 4px; font-size: 13px; }
+        .fxt-rel-list { max-height: 280px; overflow-y: auto; border: 1px solid #ccd0d4; border-radius: 4px; padding: 8px; background: #fff; }
+        .fxt-rel-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 4px; border-bottom: 1px solid #f0f0f0; }
+        .fxt-rel-item:last-child { border-bottom: none; }
+        .fxt-rel-item label { font-size: 12px; cursor: pointer; line-height: 1.4; }
+        .fxt-rel-item input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; }
+        .fxt-rel-empty { padding: 16px; text-align: center; color: #888; font-style: italic; font-size: 12px; }
+        .fxt-rel-hint { font-size: 11px; color: #666; margin-top: 6px; line-height: 1.5; font-style: italic; }
+    </style>
+
+    <div class="fxt-rel-hide-wrap">
+        <label style="font-size:12px; display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="fxt_sub_related_hide" value="1" <?php checked($hide, '1'); ?>>
+            <strong>🚫 Ẩn box Related Posts ở sidebar</strong>
+        </label>
+    </div>
+
+    <div class="fxt-rel-field">
+        <label class="fxt-rel-label">📌 Tiêu đề widget (tùy chọn):</label>
+        <input type="text" name="fxt_sub_related_title"
+               value="<?php echo esc_attr($custom_title); ?>"
+               placeholder="Mặc định: 📚 More About {broker}">
+        <p class="fxt-rel-hint">Để trống = dùng "📚 More About [Tên broker]". Có thể dùng <code>{broker}</code> để chèn tên broker.</p>
+    </div>
+
+    <div class="fxt-rel-field">
+        <label class="fxt-rel-label">✅ Chọn bài hiển thị (cùng broker cha):</label>
+
+        <?php if (empty($siblings)): ?>
+            <div class="fxt-rel-empty">
+                <?php echo $parent_id ? 'Chưa có broker_post nào khác cùng broker.' : '⚠️ Chọn broker cha và Save trước để thấy danh sách.'; ?>
+            </div>
+        <?php else: ?>
+            <div class="fxt-rel-list">
+                <?php foreach ($siblings as $sib): ?>
+                <div class="fxt-rel-item">
+                    <input type="checkbox"
+                           id="fxt_rel_<?php echo $sib->ID; ?>"
+                           name="fxt_sub_related_ids[]"
+                           value="<?php echo $sib->ID; ?>"
+                           <?php checked(in_array($sib->ID, $related_ids)); ?>>
+                    <label for="fxt_rel_<?php echo $sib->ID; ?>">
+                        <?php echo esc_html($sib->post_title); ?>
+                    </label>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <p class="fxt-rel-hint">💡 Không tích chọn bài nào = không hiện box. Cũng có thể tự động lấy theo bài pillar bằng cách xem mục "Bài pillar" bên dưới.</p>
+        <?php endif; ?>
+    </div>
+
+    <div class="fxt-rel-field" style="margin-top:14px; padding-top:12px; border-top:1px solid #e0e0e0;">
+        <label style="font-size:12px; display:flex; align-items:center; gap:6px;">
+            <input type="checkbox" name="fxt_sub_related_show_pillar" value="1"
+                   <?php checked(get_post_meta($post->ID, '_fxt_sub_related_show_pillar', true), '1'); ?>>
+            <strong>⭐ Hiển thị link đến bài pillar (Review broker) ở đầu danh sách</strong>
+        </label>
+    </div>
+    <?php
+}
+
+/**
+ * Save related posts meta
+ */
+add_action('save_post_broker_post', function ($post_id) {
+    if (!isset($_POST['fxt_sub_related_nonce']) ||
+        !wp_verify_nonce($_POST['fxt_sub_related_nonce'], 'fxt_sub_related_meta')) {
+        return;
+    }
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;
+    if (!current_user_can('edit_post', $post_id)) return;
+
+    // Hide flag
+    if (!empty($_POST['fxt_sub_related_hide'])) {
+        update_post_meta($post_id, '_fxt_sub_related_hide', '1');
+    } else {
+        delete_post_meta($post_id, '_fxt_sub_related_hide');
+    }
+
+    // Show pillar
+    if (!empty($_POST['fxt_sub_related_show_pillar'])) {
+        update_post_meta($post_id, '_fxt_sub_related_show_pillar', '1');
+    } else {
+        delete_post_meta($post_id, '_fxt_sub_related_show_pillar');
+    }
+
+    // Custom title
+    if (isset($_POST['fxt_sub_related_title'])) {
+        $title = sanitize_text_field($_POST['fxt_sub_related_title']);
+        if ($title) {
+            update_post_meta($post_id, '_fxt_sub_related_title', $title);
+        } else {
+            delete_post_meta($post_id, '_fxt_sub_related_title');
+        }
+    }
+
+    // Selected IDs
+    $ids = [];
+    if (!empty($_POST['fxt_sub_related_ids']) && is_array($_POST['fxt_sub_related_ids'])) {
+        foreach ($_POST['fxt_sub_related_ids'] as $id) {
+            $id = intval($id);
+            if ($id > 0) $ids[] = $id;
+        }
+    }
+    if ($ids) {
+        update_post_meta($post_id, '_fxt_sub_related_ids', $ids);
+    } else {
+        delete_post_meta($post_id, '_fxt_sub_related_ids');
+    }
+});
+
+/**
+ * Helper: Lấy data related posts cho sidebar
+ * Returns: ['hidden' => bool, 'title' => string, 'show_pillar' => bool, 'parent' => array, 'posts' => array]
+ */
+function fxt_get_sub_post_related_data($post_id = null) {
+    if (!$post_id) $post_id = get_the_ID();
+
+    $hidden = get_post_meta($post_id, '_fxt_sub_related_hide', true) === '1';
+    if ($hidden) {
+        return ['hidden' => true];
+    }
+
+    $ids         = get_post_meta($post_id, '_fxt_sub_related_ids', true);
+    $show_pillar = get_post_meta($post_id, '_fxt_sub_related_show_pillar', true) === '1';
+    $custom_title = get_post_meta($post_id, '_fxt_sub_related_title', true);
+    $parent      = function_exists('fxt_get_parent_broker') ? fxt_get_parent_broker($post_id) : null;
+
+    $posts = [];
+    if (is_array($ids) && !empty($ids)) {
+        $posts = get_posts([
+            'post_type'   => 'broker_post',
+            'post__in'    => $ids,
+            'orderby'     => 'post__in',
+            'numberposts' => -1,
+            'post_status' => 'publish',
+        ]);
+    }
+
+    // Nếu không có pillar và không chọn bài nào → coi như không hiện
+    if (empty($posts) && (!$show_pillar || !$parent)) {
+        return ['hidden' => true];
+    }
+
+    // Build title
+    $broker_name = $parent ? $parent['title'] : '';
+    if ($custom_title) {
+        $title = str_replace('{broker}', $broker_name, $custom_title);
+    } else {
+        $title = $broker_name ? '📚 More About ' . $broker_name : '📚 Related Posts';
+    }
+
+    return [
+        'hidden'      => false,
+        'title'       => $title,
+        'show_pillar' => $show_pillar,
+        'parent'      => $parent,
+        'posts'       => $posts,
+    ];
+}

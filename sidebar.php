@@ -13,6 +13,44 @@
         <?php endwhile; wp_reset_postdata(); endif; ?>
         </div>
     </div>
+
+    <?php
+    // ═══ CUSTOM RELATED POSTS — chỉ hiển thị trên broker_post ═══
+    $show_related_widget = false;
+    $rel_data = null;
+    if (is_singular('broker_post') && function_exists('fxt_get_sub_post_related_data')) {
+        $rel_data = fxt_get_sub_post_related_data(get_the_ID());
+        if (empty($rel_data['hidden'])) {
+            $show_related_widget = true;
+        }
+    }
+    ?>
+
+    <?php if ($show_related_widget): ?>
+    <div class="sidebar-widget sidebar-related-posts">
+        <h3 class="widget-title"><?php echo esc_html($rel_data['title']); ?></h3>
+        <ul class="sidebar-post-list sidebar-related-list">
+            <?php if (!empty($rel_data['show_pillar']) && !empty($rel_data['parent'])): ?>
+            <li class="sidebar-related-pillar">
+                <a href="<?php echo esc_url($rel_data['parent']['permalink']); ?>">
+                    <span class="sidebar-related-icon">⭐</span>
+                    <strong><?php echo esc_html(get_theme_mod('fxt_broker_review_prefix', 'Review')); ?> <?php echo esc_html($rel_data['parent']['title']); ?></strong>
+                </a>
+            </li>
+            <?php endif; ?>
+
+            <?php foreach ($rel_data['posts'] as $p): ?>
+            <li>
+                <a href="<?php echo get_permalink($p->ID); ?>">
+                    <span class="sidebar-related-icon">📝</span>
+                    <?php echo esc_html($p->post_title); ?>
+                </a>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+    <?php else: ?>
+    <!-- Default Popular Articles widget — hiện trên các trang khác -->
     <div class="sidebar-widget">
         <h3 class="widget-title"><?php echo esc_html(get_theme_mod('fxt_sidebar_popular', '📈 Popular Articles')); ?></h3>
         <ul class="sidebar-post-list">
@@ -22,5 +60,7 @@
         <?php endwhile; wp_reset_postdata(); endif; ?>
         </ul>
     </div>
+    <?php endif; ?>
+
 <?php endif; ?>
 </div>
