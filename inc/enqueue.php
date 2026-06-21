@@ -36,6 +36,10 @@ add_action('wp_enqueue_scripts', function () {
     wp_deregister_style('classic-theme-styles');
     wp_dequeue_style('core-block-supports');
     wp_dequeue_style('wc-blocks-style');
+
+    if (is_front_page()) {
+    wp_enqueue_style('fxt-home', FXT_URI . '/assets/css/home.css', ['fxt-style'], FXT_VERSION);
+    }
 }, 200);
 
 // === TẮT GLOBAL STYLES INLINE CSS ===
