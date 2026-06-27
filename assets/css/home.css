@@ -1,0 +1,72 @@
+/* ╔═══════════════════════════════════════════════════╗
+   ║  HOME SECTIONS — dùng lại design tokens của theme  ║
+   ║  Load có điều kiện trên front page (xem enqueue)   ║
+   ╚═══════════════════════════════════════════════════╝ */
+
+/* Text dẫn (trên/dưới danh sách, intro section) */
+.home-lead{max-width:760px;margin:0 auto 24px;color:var(--c-text-2);font-size:1rem;line-height:1.8;text-align:center}
+.home-lead p:last-child{margin-bottom:0}
+
+/* Khung note có viền (Brokers) */
+.home-note{max-width:840px;margin:28px auto 0;padding:18px 22px;border:1px dashed var(--c-primary);background:var(--c-primary-light);border-radius:var(--r-md);color:var(--c-text);font-size:.9rem;line-height:1.7}
+.home-note p:last-child{margin-bottom:0}
+
+/* ── How We Can Help ── */
+.help-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:32px}
+.help-box{background:var(--c-bg);border:1px solid var(--c-border-light);border-radius:var(--r-md);padding:28px 24px;transition:all .3s}
+.help-box:hover{box-shadow:var(--shadow-md);transform:translateY(-3px)}
+.help-box-icon{font-size:2rem;line-height:1;margin-bottom:14px;display:block}
+.help-box-title{font-size:1.05rem;margin-bottom:8px}
+.help-box-text{font-size:.9rem;color:var(--c-text-2);line-height:1.7}
+.help-box-text p:last-child{margin-bottom:0}
+.help-cta{text-align:center;margin-top:36px}
+
+/* ── Guide By Topic ── */
+.guide-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:32px}
+.guide-card{background:var(--c-bg);border:1px solid var(--c-border-light);border-radius:var(--r-md);padding:24px;transition:all .3s}
+.guide-card:hover{box-shadow:var(--shadow-md)}
+.guide-card-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--c-border-light)}
+.guide-card-logo{width:40px;height:40px;border-radius:var(--r-sm);background:var(--c-bg-alt);border:1px solid var(--c-border-light);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
+.guide-card-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.guide-card-name{font-size:1rem;font-weight:700}
+.guide-card-name a{color:var(--c-text)}
+.guide-card-name a:hover{color:var(--c-primary)}
+.guide-links{list-style:none;margin:0;padding:0}
+.guide-links li a{display:block;padding:9px 0;font-size:.875rem;color:var(--c-text-2);border-bottom:1px solid var(--c-border-light)}
+.guide-links li:last-child a{border-bottom:none}
+.guide-links li a:hover{color:var(--c-primary)}
+.guide-empty a{font-size:.875rem;font-weight:600;color:var(--c-primary)}
+
+/* ── Everything You Need ── */
+.eyntk-intro{max-width:760px;margin:0 auto 32px;text-align:center;color:var(--c-text-2);line-height:1.8}
+.eyntk-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}
+.eyntk-block{background:var(--c-bg);border:1px solid var(--c-border-light);border-radius:var(--r-md);padding:24px}
+.eyntk-block h3{font-size:1.05rem;margin-bottom:10px;color:var(--c-text)}
+.eyntk-block .eyntk-text{font-size:.9rem;color:var(--c-text-2);line-height:1.75}
+.eyntk-block .eyntk-text p:last-child{margin-bottom:0}
+
+/* ── About Us ── */
+.home-about-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:40px;align-items:start}
+.about-left h2{font-size:1.5rem;margin-bottom:16px}
+.about-left .about-body{color:var(--c-text-2);line-height:1.85;font-size:1rem}
+.about-left .about-body p:last-child{margin-bottom:0}
+.about-right{background:var(--c-bg);border:1px solid var(--c-border-light);border-radius:var(--r-md);padding:28px 24px}
+.about-right-title{font-size:1.1rem;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--c-primary)}
+.about-points{list-style:none;margin:0;padding:0}
+.about-points li{padding:12px 0;border-bottom:1px solid var(--c-border-light)}
+.about-points li:last-child{border-bottom:none}
+.about-point-title{font-weight:600;font-size:.95rem;color:var(--c-text);display:block}
+.about-point-text{font-size:.85rem;color:var(--c-text-2);margin-top:2px;display:block}
+.about-disclaimer{margin-top:32px;padding:18px 22px;background:var(--c-bg-warm);border-left:4px solid var(--c-accent);border-radius:0 var(--r-md) var(--r-md) 0;font-size:.85rem;color:var(--c-text-2);line-height:1.7}
+
+/* ── Responsive ── */
+@media(max-width:1024px){
+    .help-grid,.guide-grid{grid-template-columns:repeat(2,1fr)}
+    .home-about-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+    .help-grid,.guide-grid,.eyntk-grid{grid-template-columns:1fr}
+}
+
+.guide-card-cta{display:inline-block;margin-top:14px;font-size:.85rem;font-weight:600;color:var(--c-accent)}
+.guide-card-cta:hover{color:var(--c-accent-dark)}

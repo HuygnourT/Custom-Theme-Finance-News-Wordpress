@@ -47,13 +47,13 @@ add_action('customize_register', function ($wp_customize) {
 
     $section_fields = [
         'fxt_section_brokers'    => ['Title Top Brokers', '🏆 Top Recommended Brokers'],
-        'fxt_section_latest'     => ['Title Latest Articles', '📝 Latest Articles'],
-        'fxt_section_knowledge'  => ['Title Education', '📚 Education'],
+        //'fxt_section_latest'     => ['Title Latest Articles', '📝 Latest Articles'],
+        //'fxt_section_knowledge'  => ['Title Education', '📚 Education'],
         'fxt_section_viewall'    => ['Text "View All"', 'View All →'],
-        'fxt_cta_title'          => ['CTA - Title', 'Start Trading Forex Today'],
-        'fxt_cta_desc'           => ['CTA - Description', 'Compare and choose the best broker for your needs'],
-        'fxt_cta_btn'            => ['CTA - Button', 'Compare Forex Brokers →'],
-        'fxt_knowledge_category' => ['Slug category education', 'education'],
+        //'fxt_cta_title'          => ['CTA - Title', 'Start Trading Forex Today'],
+        //'fxt_cta_desc'           => ['CTA - Description', 'Compare and choose the best broker for your needs'],
+        //'fxt_cta_btn'            => ['CTA - Button', 'Compare Forex Brokers →'],
+        //'fxt_knowledge_category' => ['Slug category education', 'education'],
     ];
 
     foreach ($section_fields as $id => [$label, $default]) {
