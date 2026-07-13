@@ -254,27 +254,27 @@ add_action('customize_register', function ($wp_customize) {
     $wp_customize->add_setting('fxt_footer_about', ['default' => 'Providing trusted Forex education, broker reviews, and trading strategies for investors.', 'sanitize_callback' => 'sanitize_text_field']);
     $wp_customize->add_control('fxt_footer_about', ['label' => 'Short Description', 'section' => 'fxt_footer', 'type' => 'textarea']);
 
-    $wp_customize->add_setting('fxt_footer_col2_title', ['default' => 'Quick Links', 'sanitize_callback' => 'sanitize_text_field']);
-    $wp_customize->add_control('fxt_footer_col2_title', ['label' => 'Title column 2 (Quick Links / Categories)', 'section' => 'fxt_footer', 'type' => 'text']);
+    $wp_customize->add_setting('fxt_footer_col2_content', [
+        'default'           => fxt_default_footer_col2_text(),
+        'sanitize_callback' => 'sanitize_textarea_field',
+    ]);
+    $wp_customize->add_control('fxt_footer_col2_content', [
+        'label'       => 'Cột 2 — Tiêu đề + Link (cấu trúc nhiều cấp)',
+        'description' => '# = Tiêu đề cột (có thể để URL trống nếu chỉ là label). > = link con cấp 1, >> = cấp 2... Định dạng: Tiêu đề|URL. Chỉ dùng khi chưa gán WP Menu "Footer" hoặc widget "Footer Col 2".',
+        'section'     => 'fxt_footer',
+        'type'        => 'textarea',
+    ]);
 
-    $wp_customize->add_setting('fxt_footer_col3_title', ['default' => 'More information', 'sanitize_callback' => 'sanitize_text_field']);
-    $wp_customize->add_control('fxt_footer_col3_title', ['label' => 'Title column 3', 'section' => 'fxt_footer', 'type' => 'text']);
-
-    $footer_link_fields = [
-        'fxt_footer_link_about'      => ['Link text: About Us', 'About Us'],
-        'fxt_footer_about_slug'      => ['Page slug: About Us', 'about-us'],
-        'fxt_footer_link_contact'    => ['Link text: Contact', 'Contact'],
-        'fxt_footer_contact_slug'    => ['Page slug: Contact', 'contact'],
-        'fxt_footer_link_disclaimer' => ['Link text: Disclaimer', 'Disclaimer'],
-        'fxt_footer_disclaimer_slug' => ['Page slug: Disclaimer', 'disclaimer'],
-        'fxt_footer_link_privacy'    => ['Link text: Privacy Policy', 'Privacy Policy'],
-        'fxt_footer_privacy_slug'    => ['Page slug: Privacy Policy', 'privacy-policy'],
-    ];
-
-    foreach ($footer_link_fields as $id => [$label, $default]) {
-        $wp_customize->add_setting($id, ['default' => $default, 'sanitize_callback' => 'sanitize_text_field']);
-        $wp_customize->add_control($id, ['label' => $label, 'section' => 'fxt_footer', 'type' => 'text']);
-    }
+    $wp_customize->add_setting('fxt_footer_col3_content', [
+        'default'           => fxt_default_footer_col3_text(),
+        'sanitize_callback' => 'sanitize_textarea_field',
+    ]);
+    $wp_customize->add_control('fxt_footer_col3_content', [
+        'label'       => 'Cột 3 — Tiêu đề + Link (cấu trúc nhiều cấp)',
+        'description' => '# = Tiêu đề cột. > = link con cấp 1, >> = cấp 2... Định dạng: Tiêu đề|URL. Chỉ dùng khi chưa gán widget "Footer Col 3".',
+        'section'     => 'fxt_footer',
+        'type'        => 'textarea',
+    ]);
 
     $wp_customize->add_setting('fxt_disclaimer', ['default' => '⚠️ Forex/CFD trading involves high risk. You may lose all of your invested capital.', 'sanitize_callback' => 'wp_kses_post']);
     $wp_customize->add_control('fxt_disclaimer', ['label' => 'Risk Disclaimer', 'section' => 'fxt_footer', 'type' => 'textarea']);

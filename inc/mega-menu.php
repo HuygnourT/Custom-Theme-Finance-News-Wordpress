@@ -29,7 +29,7 @@ add_action('customize_register', function ($wp_customize) {
 
     $wp_customize->add_section('fxt_category_bar', [
         'title'       => '📂 Category Bar (Header)',
-        'description' => 'Cấu hình thanh Category hiển thị dưới header. Nếu đã tạo Menu "Category Bar", menu sẽ được ưu tiên. Nếu không, các categories được chọn bên dưới sẽ hiển thị.',
+        'description' => 'Cấu hình thanh Category hiển thị dưới header. Nếu đã tạo Menu "Category Bar", menu sẽ được ưu tiên. Nếu không, cấu trúc menu nhập bên dưới sẽ được dùng.',
         'priority'    => 24,
     ]);
 
@@ -60,58 +60,39 @@ add_action('customize_register', function ($wp_customize) {
         ],
     ]);
 
-    // Hiển thị icon
-    $wp_customize->add_setting('fxt_catbar_show_icons', [
-        'default'           => '1',
-        'sanitize_callback' => 'sanitize_text_field',
+    // Cấu trúc menu dạng text nhiều cấp
+    $wp_customize->add_setting('fxt_catbar_menu_text', [
+        'default'           => fxt_default_catbar_menu_text(),
+        'sanitize_callback' => 'sanitize_textarea_field',
     ]);
-    $wp_customize->add_control('fxt_catbar_show_icons', [
-        'label'   => 'Hiển thị icon emoji',
-        'section' => 'fxt_category_bar',
-        'type'    => 'checkbox',
+    $wp_customize->add_control('fxt_catbar_menu_text', [
+        'label'       => 'Cấu trúc Menu (mỗi dòng 1 item)',
+        'description' => '# = Menu cha (Level 1). > = Level 2, >> = Level 3, >>> = Level 4. Định dạng: Tiêu đề|URL. '
+            . 'Ví dụ: "# Brokers|/brokers" rồi dòng dưới "> Exness|/brokers/exness".',
+        'section'     => 'fxt_category_bar',
+        'type'        => 'textarea',
     ]);
-
-    // Custom items (khi không dùng Menu)
-    // Mỗi slot: icon + label + type (category/custom URL) + target
-    for ($i = 1; $i <= 8; $i++) {
-        $wp_customize->add_setting("fxt_catbar_item_{$i}_label", [
-            'default' => '', 'sanitize_callback' => 'sanitize_text_field',
-        ]);
-        $wp_customize->add_control("fxt_catbar_item_{$i}_label", [
-            'label'   => "Item {$i} - Label (để trống = ẩn)",
-            'section' => 'fxt_category_bar',
-            'type'    => 'text',
-        ]);
-
-        $wp_customize->add_setting("fxt_catbar_item_{$i}_icon", [
-            'default' => '', 'sanitize_callback' => 'sanitize_text_field',
-        ]);
-        $wp_customize->add_control("fxt_catbar_item_{$i}_icon", [
-            'label'   => "Item {$i} - Icon (emoji, e.g. 📊)",
-            'section' => 'fxt_category_bar',
-            'type'    => 'text',
-        ]);
-
-        $wp_customize->add_setting("fxt_catbar_item_{$i}_url", [
-            'default' => '', 'sanitize_callback' => 'esc_url_raw',
-        ]);
-        $wp_customize->add_control("fxt_catbar_item_{$i}_url", [
-            'label'       => "Item {$i} - URL (để trống = dùng category slug)",
-            'section'     => 'fxt_category_bar',
-            'type'        => 'url',
-        ]);
-
-        $wp_customize->add_setting("fxt_catbar_item_{$i}_cat_slug", [
-            'default' => '', 'sanitize_callback' => 'sanitize_text_field',
-        ]);
-        $wp_customize->add_control("fxt_catbar_item_{$i}_cat_slug", [
-            'label'       => "Item {$i} - Category slug (auto-dropdown con)",
-            'description' => 'Nhập slug category → dropdown tự hiện các sub-categories',
-            'section'     => 'fxt_category_bar',
-            'type'        => 'text',
-        ]);
-    }
 });
+
+/**
+ * Nội dung mặc định cho Customizer textarea (dùng làm ví dụ + fallback)
+ */
+function fxt_default_catbar_menu_text() {
+    return "# Home|/\n"
+        . "# Brokers|/brokers\n"
+        . "> Exness|/brokers/exness\n"
+        . "> IC Markets|/brokers/ic-markets\n"
+        . "> Vantage|/brokers/vantage\n"
+        . "# Trading Guides|/guides\n"
+        . "> Forex Basics|/guides/forex-basics\n"
+        . "> Technical Analysis|/guides/technical-analysis\n"
+        . "> Risk Management|/guides/risk-management\n"
+        . "# Reviews|/reviews\n"
+        . "> Exness Review|/reviews/exness\n"
+        . "> IC Markets Review|/reviews/ic-markets\n"
+        . "> Vantage Review|/reviews/vantage\n"
+        . "# About|/about";
+}
 
 // ╔═══════════════════════════════════════════════════════════════╗
 // ║  RENDER FUNCTION                                              ║
@@ -125,7 +106,6 @@ function fxt_category_bar() {
     if (!get_theme_mod('fxt_catbar_enable', '1')) return;
 
     $style = get_theme_mod('fxt_catbar_style', 'light');
-    $show_icons = get_theme_mod('fxt_catbar_show_icons', '1');
     ?>
     <div class="catbar catbar-<?php echo esc_attr($style); ?>" id="category-bar">
         <div class="container">
@@ -142,8 +122,8 @@ function fxt_category_bar() {
                         'walker'         => new FXT_Category_Bar_Walker(),
                     ]);
                 else:
-                    // Ưu tiên 2: Dùng Customizer items
-                    fxt_render_catbar_from_customizer($show_icons);
+                    // Ưu tiên 2: Dùng cấu trúc menu dạng text từ Customizer
+                    fxt_render_catbar_from_text();
                 endif;
                 ?>
             </nav>
@@ -153,75 +133,186 @@ function fxt_category_bar() {
 }
 
 /**
- * Render từ Customizer settings
+ * Parse cấu trúc menu dạng text (#, >, >>, >>>) thành cây (tree) lồng nhau.
+ * Mỗi dòng: {#|>|>>|>>>} Title|URL
  */
-function fxt_render_catbar_from_customizer($show_icons) {
-    echo '<ul class="catbar-menu">';
+function fxt_parse_catbar_menu_text($raw_text) {
+    $lines = preg_split('/\r\n|\r|\n/', (string) $raw_text);
+    $tree  = [];
+    $stack = []; // $stack[$depth] = reference đến node ở cấp đó
 
-    // Item đặc biệt: Broker Reviews (luôn hiện nếu có brokers)
-    $broker_count = wp_count_posts('broker');
-    if ($broker_count && $broker_count->publish > 0) {
-        echo '<li class="catbar-item">';
-        echo '<a href="' . get_post_type_archive_link('broker') . '" class="catbar-link">';
-        if ($show_icons) echo '<span class="catbar-icon">📊</span>';
-        echo '<span>Broker Reviews</span></a>';
-        echo '</li>';
-    }
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '') continue;
 
-    // Custom items từ Customizer
-    for ($i = 1; $i <= 8; $i++) {
-        $label = get_theme_mod("fxt_catbar_item_{$i}_label");
-        if (!$label) continue;
-
-        $icon = get_theme_mod("fxt_catbar_item_{$i}_icon");
-        $url = get_theme_mod("fxt_catbar_item_{$i}_url");
-        $cat_slug = get_theme_mod("fxt_catbar_item_{$i}_cat_slug");
-
-        // Xác định URL
-        $link = '#';
-        $children = [];
-
-        if ($cat_slug) {
-            $cat = get_category_by_slug($cat_slug);
-            if ($cat) {
-                $link = get_category_link($cat->term_id);
-                // Lấy sub-categories
-                $children = get_categories([
-                    'parent'     => $cat->term_id,
-                    'hide_empty' => false,
-                    'orderby'    => 'name',
-                    'number'     => 10,
-                ]);
-            }
-        } elseif ($url) {
-            $link = $url;
+        if ($line[0] === '#') {
+            $depth = 1;
+            $rest  = ltrim($line, '# ');
+        } elseif ($line[0] === '>') {
+            preg_match('/^>+/', $line, $m);
+            $depth = strlen($m[0]) + 1; // 1 dấu > = level 2, 2 dấu >> = level 3...
+            $rest  = trim(substr($line, strlen($m[0])));
+        } else {
+            continue; // dòng không đúng định dạng, bỏ qua
         }
 
-        $has_children = !empty($children);
-        echo '<li class="catbar-item' . ($has_children ? ' catbar-has-children' : '') . '">';
-        echo '<a href="' . esc_url($link) . '" class="catbar-link">';
-        if ($show_icons && $icon) echo '<span class="catbar-icon">' . esc_html($icon) . '</span>';
-        echo '<span>' . esc_html($label) . '</span>';
-        if ($has_children) echo '<span class="catbar-arrow">▾</span>';
-        echo '</a>';
+        $parts = array_map('trim', explode('|', $rest, 2));
+        $title = $parts[0] ?? '';
+        $url   = $parts[1] ?? '';
+        if ($title === '') continue;
+        if ($url === '') $url = '#';
+
+        $node = ['title' => $title, 'url' => $url, 'children' => []];
+
+        if ($depth <= 1) {
+            $tree[] = $node;
+            $stack  = [1 => &$tree[array_key_last($tree)]];
+            continue;
+        }
+
+        // Tìm cấp cha gần nhất đang tồn tại (phòng trường hợp nhảy cóc cấp)
+        $parent_depth = $depth - 1;
+        while ($parent_depth > 1 && !isset($stack[$parent_depth])) {
+            $parent_depth--;
+        }
+
+        if (!isset($stack[$parent_depth])) {
+            // Không có cấp cha nào phù hợp → coi dòng này như Level 1
+            $tree[] = $node;
+            $stack  = [1 => &$tree[array_key_last($tree)]];
+            continue;
+        }
+
+        $stack[$parent_depth]['children'][] = $node;
+        $last_key = array_key_last($stack[$parent_depth]['children']);
+        $stack[$parent_depth + 1] = &$stack[$parent_depth]['children'][$last_key];
+
+        // Dọn các cấp sâu hơn cũ vì đang chuyển sang nhánh mới
+        foreach (array_keys($stack) as $d) {
+            if ($d > $parent_depth + 1) unset($stack[$d]);
+        }
+    }
+
+    return $tree;
+}
+
+/**
+ * Render cây menu (không giới hạn số cấp) ra HTML catbar
+ */
+function fxt_render_catbar_menu_tree($items, $depth = 1) {
+    if (empty($items)) return;
+
+    if ($depth === 1) {
+        echo '<ul class="catbar-menu">';
+    } elseif ($depth === 2) {
+        echo '<div class="catbar-dropdown"><ul class="catbar-dropdown-list">';
+    } else {
+        echo '<ul class="catbar-dropdown-sub">';
+    }
+
+    foreach ($items as $item) {
+        $has_children = !empty($item['children']);
+
+        if ($depth === 1) {
+            $li_class = 'catbar-item' . ($has_children ? ' catbar-has-children' : '');
+            echo '<li class="' . esc_attr($li_class) . '">';
+            echo '<a href="' . esc_url($item['url']) . '" class="catbar-link">';
+            echo '<span>' . esc_html($item['title']) . '</span>';
+            if ($has_children) echo '<span class="catbar-arrow">▾</span>';
+            echo '</a>';
+        } else {
+            echo '<li' . ($has_children ? ' class="catbar-has-children"' : '') . '>';
+            echo '<a href="' . esc_url($item['url']) . '" class="catbar-dropdown-link">';
+            echo esc_html($item['title']);
+            echo '</a>';
+        }
 
         if ($has_children) {
-            echo '<div class="catbar-dropdown"><ul class="catbar-dropdown-list">';
-            // Link "Xem tất cả"
-            echo '<li><a href="' . esc_url($link) . '" class="catbar-dropdown-link catbar-dropdown-all"><strong>Tất cả ' . esc_html($label) . '</strong></a></li>';
-            foreach ($children as $child) {
-                echo '<li><a href="' . esc_url(get_category_link($child->term_id)) . '" class="catbar-dropdown-link">';
-                echo esc_html($child->name);
-                if ($child->count > 0) echo ' <span class="catbar-count">(' . $child->count . ')</span>';
-                echo '</a></li>';
-            }
-            echo '</ul></div>';
+            fxt_render_catbar_menu_tree($item['children'], $depth + 1);
         }
 
         echo '</li>';
     }
 
-    echo '</ul>';
+    if ($depth === 1) {
+        echo '</ul>';
+    } elseif ($depth === 2) {
+        echo '</ul></div>';
+    } else {
+        echo '</ul>';
+    }
+}
+
+/**
+ * Lấy cấu trúc menu từ Customizer, parse và render
+ */
+function fxt_render_catbar_from_text() {
+    $raw  = get_theme_mod('fxt_catbar_menu_text', fxt_default_catbar_menu_text());
+    $tree = fxt_parse_catbar_menu_text($raw);
+    fxt_render_catbar_menu_tree($tree, 1);
+}
+
+/**
+ * Nội dung mặc định cho Footer Cột 2 (Customizer textarea)
+ */
+function fxt_default_footer_col2_text() {
+    return "# Brokers Review|https://test.fxtradingtoday.com/broker-reviews/\n"
+        . "> Exness|https://test.fxtradingtoday.com/broker-reviews/exness-review/\n"
+        . "> IC Markets|https://test.fxtradingtoday.com/broker-reviews/ic-markets/\n"
+        . "> Vantage|https://test.fxtradingtoday.com/broker-reviews/vantage-review/";
+}
+
+/**
+ * Nội dung mặc định cho Footer Cột 3 (Customizer textarea)
+ */
+function fxt_default_footer_col3_text() {
+    return "# Information|\n"
+        . "> About us|https://test.fxtradingtoday.com/about-us/\n"
+        . "> Our Standard|https://test.fxtradingtoday.com/about-us/\n"
+        . "> Disclaimer|https://test.fxtradingtoday.com/disclaimer/\n"
+        . "> Privacy Policy|https://test.fxtradingtoday.com/privacy-policy/";
+}
+
+/**
+ * Gom toàn bộ con cháu (mọi cấp) thành 1 mảng phẳng — dùng cho Footer
+ * vì Footer chỉ hiển thị list phẳng, không có dropdown như mega menu.
+ */
+function fxt_flatten_menu_children($children, &$out) {
+    foreach ($children as $child) {
+        $out[] = $child;
+        if (!empty($child['children'])) {
+            fxt_flatten_menu_children($child['children'], $out);
+        }
+    }
+}
+
+/**
+ * Parse + render nội dung Footer (Tiêu đề # + danh sách link phẳng, không dropdown)
+ * Hỗ trợ nhiều nhóm "#" trong cùng 1 field, mỗi nhóm là 1 heading + list riêng.
+ */
+function fxt_render_footer_menu_text($raw_text) {
+    $tree = fxt_parse_catbar_menu_text($raw_text);
+    if (empty($tree)) return;
+
+    foreach ($tree as $group) {
+        echo '<h4 class="footer-widget-title">';
+        if (!empty($group['url']) && $group['url'] !== '#') {
+            echo '<a href="' . esc_url($group['url']) . '">' . esc_html($group['title']) . '</a>';
+        } else {
+            echo esc_html($group['title']);
+        }
+        echo '</h4>';
+
+        if (!empty($group['children'])) {
+            $flat = [];
+            fxt_flatten_menu_children($group['children'], $flat);
+            echo '<ul class="footer-links">';
+            foreach ($flat as $item) {
+                echo '<li><a href="' . esc_url($item['url']) . '">' . esc_html($item['title']) . '</a></li>';
+            }
+            echo '</ul>';
+        }
+    }
 }
 
 // ╔═══════════════════════════════════════════════════════════════╗

@@ -125,7 +125,7 @@ table{border-collapse:collapse;border-spacing:0}
 /* ╔═══════════════════════════════════════════════════╗
    ║  PHẦN 5: HEADER                                  ║
    ╚═══════════════════════════════════════════════════╝ */
-.site-header{position:sticky;top:0;z-index:1000;height:var(--header-h);background:rgba(255,255,255,.92);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px) saturate(180%);border-bottom:1px solid var(--c-border-light);transition:box-shadow .3s}
+.site-header{position:sticky;top:0;z-index:1000;height:var(--header-h);background:rgba(255,255,255,.92);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px) saturate(180%);border-bottom:1px solid var(--c-border-light);transition:box-shadow .3s;isolation:isolate}
 .site-header.scrolled{box-shadow:0 1px 12px rgba(0,0,0,.06)}
 .header-inner{display:flex;align-items:center;justify-content:space-between;height:var(--header-h);max-width:var(--container);margin:0 auto;padding:0 24px}
 
@@ -461,7 +461,7 @@ table{border-collapse:collapse;border-spacing:0}
 .pagination-nav .page-numbers li span.current{background:var(--c-primary);border-color:var(--c-primary);color:#fff}
 .archive-header{margin-bottom:40px}
 .archive-title{font-size:1.75rem;margin-bottom:8px}
-.page-title{font-size:1.75rem;margin-bottom:24px}
+.page-title{font-size:1.75rem;margin-bottom:24px;position:relative;z-index:1}
 .page-404{text-align:center;padding:64px 0;max-width:500px;margin:0 auto}
 .error-code{font-size:6rem;font-weight:800;color:var(--c-primary);line-height:1;margin-bottom:16px}
 .content-none{text-align:center;padding:64px 0}
@@ -621,12 +621,17 @@ body.admin-bar .broker-section{scroll-margin-top:calc(var(--header-h) + 92px)}
 /* ╔═══════════════════════════════════════════════════╗
    ║  PHẦN 20: CATEGORY BAR (Mega Menu)                ║
    ╚═══════════════════════════════════════════════════╝ */
-.catbar{position:relative;z-index:98;border-bottom:1px solid var(--c-border)}
+.catbar{position:sticky;top:var(--header-h);z-index:999;border-bottom:1px solid var(--c-border)}
+body.admin-bar .catbar{top:calc(var(--header-h) + 32px)}
+@media screen and (max-width:782px){body.admin-bar .catbar{top:calc(var(--header-h) + 46px)}}
 .catbar-light{background:var(--c-bg)}
 .catbar-dark{background:var(--c-bg-dark)}
 .catbar-primary{background:var(--c-primary)}
-.catbar-nav{overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;-webkit-overflow-scrolling:touch}
+.catbar-nav{-webkit-overflow-scrolling:touch}
 .catbar-nav::-webkit-scrollbar{display:none}
+@media screen and (max-width:782px){
+    .catbar-nav{overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+}
 .catbar-menu{display:flex;gap:0;list-style:none;margin:0;padding:0;white-space:nowrap}
 .catbar-item{position:relative;list-style:none}
 .catbar-link{display:flex;align-items:center;gap:6px;padding:12px 18px;font-size:.85rem;font-weight:600;text-decoration:none;transition:all .2s;white-space:nowrap}
@@ -647,6 +652,12 @@ body.admin-bar .broker-section{scroll-margin-top:calc(var(--header-h) + 92px)}
 .catbar-dropdown-link:hover{background:var(--c-primary-light);color:var(--c-primary)}
 .catbar-dropdown-all{border-bottom:1px solid var(--c-border-light);margin-bottom:4px;padding-bottom:10px}
 .catbar-count{font-size:.75rem;color:var(--c-text-3);font-weight:400}
+.catbar-dropdown-list li{position:relative}
+.catbar-dropdown-sub{list-style:none;margin:0;padding:8px;position:absolute;top:-8px;left:100%;min-width:220px;background:var(--c-bg);border:1px solid var(--c-border);border-radius:var(--r-md);box-shadow:var(--shadow-lg);opacity:0;visibility:hidden;transform:translateX(4px);transition:all .2s ease;z-index:101}
+.catbar-dropdown-list li.catbar-has-children:hover>.catbar-dropdown-sub,.catbar-dropdown-list li.catbar-has-children.catbar-open>.catbar-dropdown-sub{opacity:1;visibility:visible;transform:translateX(0)}
+.catbar-dropdown-list li.catbar-has-children>a.catbar-dropdown-link::after{content:'▸';float:right;opacity:.5;margin-left:8px}
+@media screen and (max-width:782px){.catbar-dropdown-sub{position:static;box-shadow:none;border:none;opacity:1;visibility:visible;transform:none;display:none;padding-left:12px}
+.catbar-dropdown-list li.catbar-open>.catbar-dropdown-sub{display:block}}
 @media(max-width:768px){
     .catbar-link{padding:10px 14px;font-size:.8rem}
     .catbar-dropdown{position:fixed;left:16px;right:16px;top:auto;width:auto;min-width:auto;border-radius:var(--r-md)}
