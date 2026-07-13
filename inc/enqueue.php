@@ -17,11 +17,6 @@ add_action('wp_enqueue_scripts', function () {
     if (is_page_template('page-templates/template-brokers.php') || is_post_type_archive('broker')) {
         wp_enqueue_script('fxt-broker-filter', FXT_URI . '/assets/js/broker-filter.js', [], FXT_VERSION, true);
     }
-
-    // Broker sections: tabs + collapsible (chỉ load trên single broker)
-    if (is_singular('broker')) {
-        wp_enqueue_script('fxt-broker-sections', FXT_URI . '/assets/js/broker-sections.js', [], FXT_VERSION, true);
-    }
 }, 10);
 
 // === TẮT TẤT CẢ WP DEFAULT STYLES (priority 200 = chạy sau cùng) ===
@@ -71,7 +66,7 @@ add_action('wp_head', function () {
 
 // === DEFER SCRIPTS ===
 add_filter('script_loader_tag', function ($tag, $handle) {
-    if (in_array($handle, ['fxt-main', 'fxt-broker-filter', 'fxt-broker-sections'])) {
+    if (in_array($handle, ['fxt-main', 'fxt-broker-filter'])) {
         return str_replace(' src', ' defer src', $tag);
     }
     return $tag;
