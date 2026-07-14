@@ -39,12 +39,9 @@ add_action('customize_register', function ($wp_customize) {
 
     // ╔═══════════════════════════════════════════════╗
     // ║  2. SECTION TITLES (HOME PAGE)                ║
+    // ║  Đã gộp vào section "Home · Brokers"          ║
+    // ║  (inc/customizer-homepage.php)                ║
     // ╚═══════════════════════════════════════════════╝
-    $wp_customize->add_section('fxt_sections', [
-        'title'    => '🏠 Homepage - Sections',
-        'priority' => 26,
-    ]);
-
     $section_fields = [
         'fxt_section_brokers'    => ['Title Top Brokers', '🏆 Top Recommended Brokers'],
         //'fxt_section_latest'     => ['Title Latest Articles', '📝 Latest Articles'],
@@ -58,7 +55,7 @@ add_action('customize_register', function ($wp_customize) {
 
     foreach ($section_fields as $id => [$label, $default]) {
         $wp_customize->add_setting($id, ['default' => $default, 'sanitize_callback' => 'sanitize_text_field']);
-        $wp_customize->add_control($id, ['label' => $label, 'section' => 'fxt_sections', 'type' => 'text']);
+        $wp_customize->add_control($id, ['label' => $label, 'section' => 'fxt_home_brokers', 'type' => 'text']);
     }
 
     // ╔═══════════════════════════════════════════════╗

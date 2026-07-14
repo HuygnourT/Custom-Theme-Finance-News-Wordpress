@@ -39,9 +39,11 @@ function fxt_home_field($wp, $section, $id, $label, $default = '', $type = 'text
 add_action('customize_register', function ($wp_customize) {
 
     // ╔═══════════════════════════════════════════════╗
-    // ║  SECTION 2 — BROKERS (text thêm + note box)   ║
+    // ║  SECTION 2 — BROKERS (tiêu đề + text thêm)    ║
+    // ║  Đã gộp: "🏠 Homepage - Sections" (title +     ║
+    // ║  view-all) và "🏠 Home · Brokers" (text thêm)  ║
     // ╚═══════════════════════════════════════════════╝
-    $wp_customize->add_section('fxt_home_brokers', ['title' => '🏠 Home · Brokers (text thêm)', 'priority' => 26]);
+    $wp_customize->add_section('fxt_home_brokers', ['title' => '🏠 Home · Brokers', 'priority' => 26]);
     fxt_home_field($wp_customize, 'fxt_home_brokers', 'fxt_home_brokers_text_top',    'Text phía TRÊN danh sách broker', '', 'textarea');
     fxt_home_field($wp_customize, 'fxt_home_brokers', 'fxt_home_brokers_text_bottom', 'Text phía DƯỚI danh sách broker', '', 'textarea');
     fxt_home_field($wp_customize, 'fxt_home_brokers', 'fxt_home_brokers_note',        'Khung Note (có viền)', '', 'textarea', 'Để trống = ẩn. Cho phép HTML cơ bản.');
