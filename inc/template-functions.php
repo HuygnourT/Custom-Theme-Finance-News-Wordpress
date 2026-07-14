@@ -6,14 +6,105 @@
 if (!defined('ABSPATH')) exit;
 
 /**
+ * Parse chuỗi "Label|URL" thành mảng ['label'=>..,'url'=>..]
+ * Nếu không có "|" hoặc URL để trống → dùng $default_url (cho phép fallback dynamic link).
+ */
+function fxt_parse_label_url($raw, $default_label = '', $default_url = '#') {
+    $raw = trim((string) $raw);
+    if ($raw === '') {
+        return ['label' => $default_label, 'url' => $default_url];
+    }
+
+    $parts = array_map('trim', explode('|', $raw, 2));
+    $label = $parts[0] !== '' ? $parts[0] : $default_label;
+    $url   = (isset($parts[1]) && $parts[1] !== '') ? $parts[1] : $default_url;
+
+    return ['label' => $label, 'url' => $url];
+}
+
+/**
+ * Parse danh sách Statistics dạng text nhiều dòng thành mảng.
+ * Mỗi dòng: "#Nhãn | Giá trị" — số dòng = số cột hiển thị.
+ */
+function fxt_parse_stat_list($raw_text) {
+    $lines = preg_split('/\r\n|\r|\n/', (string) $raw_text);
+    $stats = [];
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '') continue;
+
+        $line  = ltrim($line, '# ');
+        $parts = array_map('trim', explode('|', $line, 2));
+        $label = $parts[0] ?? '';
+        $value = $parts[1] ?? '';
+
+        if ($label === '' && $value === '') continue;
+
+        $stats[] = ['label' => $label, 'value' => $value];
+    }
+
+    return $stats;
+}
+
+/**
+ * Nội dung mặc định cho ô Statistics (Customizer textarea)
+ */
+function fxt_default_hero_stats_text() {
+    return "#Brokers Reviewed | 15+\n"
+        . "#Educational Articles | 200+\n"
+        . "#Monthly Readers | 50K+";
+}
+
+/**
  * Reading time - text từ Customizer
  */
+// Fix lại cho đọc được các custom field
 function fxt_reading_time($post_id = null) {
     if (!$post_id) $post_id = get_the_ID();
-    $content = get_post_field('post_content', $post_id);
-    $word_count = str_word_count(strip_tags($content));
-    $minutes = max(1, ceil($word_count / 200));
-    $template = get_theme_mod('fxt_label_reading_time', '{min} min read');
+
+    $post_type = get_post_type($post_id);
+    $content   = get_post_field('post_content', $post_id);
+
+    // Gom thêm nội dung từ các custom field, tùy theo loại post
+    $extra = [];
+
+    if ($post_type === 'broker') {
+        $extra[] = get_post_meta($post_id, '_fxt_pros', true);
+        $extra[] = get_post_meta($post_id, '_fxt_cons', true);
+
+        $sections = get_post_meta($post_id, '_fxt_broker_sections', true);
+        if (is_array($sections)) {
+            foreach ($sections as $sec) {
+                $extra[] = $sec['content']         ?? '';
+                $extra[] = $sec['pros']             ?? '';
+                $extra[] = $sec['cons']              ?? '';
+                $extra[] = $sec['collapse_detail']  ?? '';
+            }
+        }
+    }
+
+    if (in_array($post_type, ['broker_post', 'generic_post'], true)) {
+        $extra[] = get_post_meta($post_id, '_fxt_sub_pros', true);
+        $extra[] = get_post_meta($post_id, '_fxt_sub_cons', true);
+        $extra[] = get_post_meta($post_id, '_fxt_sub_intro_text', true);
+        $extra[] = get_post_meta($post_id, '_fxt_sub_outro_text', true);
+
+        $sub_sections = get_post_meta($post_id, '_fxt_sub_sections', true);
+        if (is_array($sub_sections)) {
+            foreach ($sub_sections as $sec) {
+                $extra[] = $sec['content']         ?? '';
+                $extra[] = $sec['pros']             ?? '';
+                $extra[] = $sec['cons']              ?? '';
+                $extra[] = $sec['collapse_detail']  ?? '';
+            }
+        }
+    }
+
+    $full_text  = $content . ' ' . implode(' ', $extra);
+    $word_count = str_word_count(strip_tags($full_text));
+    $minutes    = max(1, ceil($word_count / 200));
+    $template   = get_theme_mod('fxt_label_reading_time', '{min} min read');
     return str_replace('{min}', $minutes, $template);
 }
 

@@ -24,18 +24,25 @@ get_header(); ?>
             echo str_replace(['{accent}', '{/accent}'], ['<span class="text-accent">', '</span>'], esc_html($title));
         ?></h1>
         <p class="hero-desc"><?php echo esc_html(get_theme_mod('fxt_hero_desc', 'Detailed comparison of top Forex brokers. Objective reviews of spreads, leverage, regulation, and real trading experience.')); ?></p>
+        <?php
+        $btn1 = fxt_parse_label_url(get_theme_mod('fxt_hero_btn1', 'View Broker Reviews'), 'View Broker Reviews', get_post_type_archive_link('broker'));
+        $btn2 = fxt_parse_label_url(get_theme_mod('fxt_hero_btn2', 'Forex Education'), 'Forex Education', get_permalink(get_option('page_for_posts')));
+        ?>
         <div class="hero-actions">
-            <a href="<?php echo get_post_type_archive_link('broker'); ?>" class="btn btn-primary btn-lg"><?php echo esc_html(get_theme_mod('fxt_hero_btn1', 'View Broker Reviews')); ?></a>
-            <a href="<?php echo get_permalink(get_option('page_for_posts')); ?>" class="btn btn-outline btn-lg"><?php echo esc_html(get_theme_mod('fxt_hero_btn2', 'Forex Education')); ?></a>
+            <a href="<?php echo esc_url($btn1['url']); ?>" class="btn btn-primary btn-lg"><?php echo esc_html($btn1['label']); ?></a>
+            <a href="<?php echo esc_url($btn2['url']); ?>" class="btn btn-outline btn-lg"><?php echo esc_html($btn2['label']); ?></a>
         </div>
+        <?php $hero_stats = fxt_parse_stat_list(get_theme_mod('fxt_hero_stats_text', fxt_default_hero_stats_text())); ?>
+        <?php if (!empty($hero_stats)): ?>
         <div class="hero-stats">
-            <?php for ($i = 1; $i <= 3; $i++): ?>
+            <?php foreach ($hero_stats as $stat): ?>
             <div class="hero-stat">
-                <div class="hero-stat-number"><?php echo esc_html(get_theme_mod("fxt_hero_stat{$i}_num")); ?></div>
-                <div class="hero-stat-label"><?php echo esc_html(get_theme_mod("fxt_hero_stat{$i}_label")); ?></div>
+                <div class="hero-stat-number"><?php echo esc_html($stat['value']); ?></div>
+                <div class="hero-stat-label"><?php echo esc_html($stat['label']); ?></div>
             </div>
-            <?php endfor; ?>
+            <?php endforeach; ?>
         </div>
+        <?php endif; ?>
     </div></div>
 </section>
 

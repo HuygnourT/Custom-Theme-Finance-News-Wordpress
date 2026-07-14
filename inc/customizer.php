@@ -22,20 +22,26 @@ add_action('customize_register', function ($wp_customize) {
         'fxt_hero_badge'    => ['Badge text', 'Latest Forex Broker Reviews ' . date('Y')],
         'fxt_hero_title'    => ['Main Title (use {accent} to highlight text)', '{accent}Trusted{/accent} Forex Broker Reviews for Investors'],
         'fxt_hero_desc'     => ['Description', 'Detailed comparison of top Forex brokers. Objective reviews of spreads, leverage, regulation, and real trading experience'],
-        'fxt_hero_btn1'     => ['Primary Button', 'View Broker Reviews'],
-        'fxt_hero_btn2'     => ['Secondary Button', 'Forex Education'],
-        'fxt_hero_stat1_num'   => ['Statistics 1 - Number', '15+'],
-        'fxt_hero_stat1_label' => ['Statistics 1 - Label', 'Brokers Reviewed'],
-        'fxt_hero_stat2_num'   => ['Statistics 2 - Number', '200+'],
-        'fxt_hero_stat2_label' => ['Statistics 2 - Label', 'Educational Articles'],
-        'fxt_hero_stat3_num'   => ['Statistics 3 - Number', '50K+'],
-        'fxt_hero_stat3_label' => ['Statistics 3 - Label', 'Monthly Readers'],
+        'fxt_hero_btn1'     => ['Primary Button (Text|URL — URL để trống = dùng link mặc định "Broker Reviews")', 'View Broker Reviews'],
+        'fxt_hero_btn2'     => ['Secondary Button (Text|URL — URL để trống = dùng link mặc định "Blog")', 'Forex Education'],
     ];
 
     foreach ($hero_fields as $id => [$label, $default]) {
         $wp_customize->add_setting($id, ['default' => $default, 'sanitize_callback' => 'sanitize_text_field']);
         $wp_customize->add_control($id, ['label' => $label, 'section' => 'fxt_hero', 'type' => 'text']);
     }
+
+    // Statistics: 1 ô textarea duy nhất, số dòng = số cột hiển thị tự động
+    $wp_customize->add_setting('fxt_hero_stats_text', [
+        'default'           => fxt_default_hero_stats_text(),
+        'sanitize_callback' => 'sanitize_textarea_field',
+    ]);
+    $wp_customize->add_control('fxt_hero_stats_text', [
+        'label'       => 'Statistics (mỗi dòng 1 số liệu)',
+        'description' => 'Định dạng: <code>#Nhãn | Giá trị</code>. Mỗi dòng sẽ tự động thành 1 cột — thêm/bớt dòng để đổi số cột.',
+        'section'     => 'fxt_hero',
+        'type'        => 'textarea',
+    ]);
 
     // ╔═══════════════════════════════════════════════╗
     // ║  2. SECTION TITLES (HOME PAGE)                ║
