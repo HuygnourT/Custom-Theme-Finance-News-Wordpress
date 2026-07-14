@@ -46,23 +46,29 @@
 .eyntk-block .eyntk-text p:last-child{margin-bottom:0}
 
 /* ── About Us ── */
-.home-about-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:40px;align-items:start}
-.about-left h2{font-size:1.5rem;margin-bottom:16px}
-.about-left .about-body{color:var(--c-text-2);line-height:1.85;font-size:1rem}
-.about-left .about-body p:last-child{margin-bottom:0}
-.about-right{background:var(--c-bg);border:1px solid var(--c-border-light);border-radius:var(--r-md);padding:28px 24px}
-.about-right-title{font-size:1.1rem;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--c-primary)}
-.about-points{list-style:none;margin:0;padding:0}
-.about-points li{padding:12px 0;border-bottom:1px solid var(--c-border-light)}
-.about-points li:last-child{border-bottom:none}
-.about-point-title{font-weight:600;font-size:.95rem;color:var(--c-text);display:block}
-.about-point-text{font-size:.85rem;color:var(--c-text-2);margin-top:2px;display:block}
+.home-about-grid{display:flex;flex-direction:column;gap:32px}
+.about-main h2{font-size:1.5rem;margin-bottom:16px}
+.about-main .about-body{color:var(--c-text-2);line-height:1.85;font-size:1rem}
+.about-main .about-body p:last-child{margin-bottom:0}
 .about-disclaimer{margin-top:32px;padding:18px 22px;background:var(--c-bg-warm);border-left:4px solid var(--c-accent);border-radius:0 var(--r-md) var(--r-md) 0;font-size:.85rem;color:var(--c-text-2);line-height:1.7}
+
+/* ── About Us — Accordion ── */
+.about-accordion{display:flex;flex-direction:column;gap:12px}
+.accordion-item{background:var(--c-bg);border:1px solid var(--c-border-light);border-radius:var(--r-md);padding:0 20px;overflow:hidden}
+.accordion-item .accordion-title{cursor:pointer;list-style:none;font-weight:600;font-size:.98rem;color:var(--c-text);padding:16px 0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.accordion-item .accordion-title::-webkit-details-marker{display:none}
+.accordion-item .accordion-title::after{content:'+';font-size:1.2rem;color:var(--c-primary);flex-shrink:0;transition:transform .2s ease}
+.accordion-item[open] .accordion-title::after{content:'−'}
+.accordion-body{padding:0 0 18px;color:var(--c-text-2);font-size:.9rem;line-height:1.75}
+.accordion-body p{margin:0 0 12px}
+.accordion-cta{display:inline-flex;align-items:center;gap:6px;margin-top:4px;color:var(--c-primary);font-weight:600;font-size:.88rem;text-decoration:none;border-bottom:1px solid transparent;padding-bottom:1px;transition:border-color .2s ease,gap .2s ease}
+.accordion-cta:hover{border-bottom-color:var(--c-primary);gap:9px}
+.accordion-cta-arrow{transition:transform .2s ease}
+.accordion-cta:hover .accordion-cta-arrow{transform:translateX(2px)}
 
 /* ── Responsive ── */
 @media(max-width:1024px){
     .help-grid,.guide-grid{grid-template-columns:repeat(2,1fr)}
-    .home-about-grid{grid-template-columns:1fr}
 }
 @media(max-width:768px){
     .help-grid,.guide-grid,.eyntk-grid{grid-template-columns:1fr}

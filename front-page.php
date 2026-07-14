@@ -243,26 +243,15 @@ get_header(); ?>
 <section class="section section-alt">
     <div class="container">
         <div class="home-about-grid">
-            <div class="about-left">
+            <div class="about-main">
                 <h2><?php echo esc_html(get_theme_mod('fxt_home_about_title', 'About Us')); ?></h2>
                 <div class="about-body"><?php echo wpautop(wp_kses_post(get_theme_mod('fxt_home_about_text', ''))); ?></div>
             </div>
 
-            <div class="about-right">
-                <h3 class="about-right-title"><?php echo esc_html(get_theme_mod('fxt_home_about_right_title', 'Why Traders Trust Us')); ?></h3>
-                <ul class="about-points">
-                    <?php for ($i = 1; $i <= 6; $i++):
-                        $it = get_theme_mod("fxt_home_about_item{$i}_title", '');
-                        if (!$it) continue;
-                        $ix = get_theme_mod("fxt_home_about_item{$i}_text", '');
-                    ?>
-                    <li>
-                        <span class="about-point-title"><?php echo esc_html($it); ?></span>
-                        <?php if ($ix): ?><span class="about-point-text"><?php echo esc_html($ix); ?></span><?php endif; ?>
-                    </li>
-                    <?php endfor; ?>
-                </ul>
-            </div>
+            <?php
+            $about_accordion = fxt_parse_accordion_text(get_theme_mod('fxt_home_about_accordion_text', fxt_default_about_accordion_text()));
+            fxt_render_about_accordion($about_accordion);
+            ?>
         </div>
 
         <?php $about_disc = get_theme_mod('fxt_home_about_disclaimer', ''); if ($about_disc): ?>

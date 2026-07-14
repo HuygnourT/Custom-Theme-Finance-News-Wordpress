@@ -131,14 +131,12 @@ add_action('customize_register', function ($wp_customize) {
     // ╚═══════════════════════════════════════════════╝
     $wp_customize->add_section('fxt_home_about', ['title' => '🏠 Home · About Us', 'priority' => 30]);
     fxt_home_field($wp_customize, 'fxt_home_about', 'fxt_home_about_hide', 'Ẩn section này', '', 'checkbox');
-    fxt_home_field($wp_customize, 'fxt_home_about', 'fxt_home_about_title', 'Bên trái · Tiêu đề', 'About Us', 'text');
-    fxt_home_field($wp_customize, 'fxt_home_about', 'fxt_home_about_text',  'Bên trái · Nội dung chính',
+    fxt_home_field($wp_customize, 'fxt_home_about', 'fxt_home_about_title', 'Tiêu đề', 'About Us', 'text');
+    fxt_home_field($wp_customize, 'fxt_home_about', 'fxt_home_about_text',  'Nội dung chính',
         'FX Trading Today delivers independent broker reviews and practical trading education to help investors make informed decisions.', 'textarea');
-    fxt_home_field($wp_customize, 'fxt_home_about', 'fxt_home_about_right_title', 'Bên phải · Tiêu đề', 'Why Traders Trust Us', 'text');
-    for ($i = 1; $i <= 6; $i++) {
-        fxt_home_field($wp_customize, 'fxt_home_about', "fxt_home_about_item{$i}_title", "Bên phải · Mục {$i} · Tiêu đề (để trống = ẩn)", '', 'text');
-        fxt_home_field($wp_customize, 'fxt_home_about', "fxt_home_about_item{$i}_text",  "Bên phải · Mục {$i} · Mô tả (tùy chọn)", '', 'text');
-    }
+    fxt_home_field($wp_customize, 'fxt_home_about', 'fxt_home_about_accordion_text', 'Accordion (bên dưới Tiêu đề + Nội dung chính)',
+        fxt_default_about_accordion_text(), 'textarea_raw',
+        '# = Tiêu đề accordion. > = Nội dung. * Tiêu đề nút|URL = nút CTA (tùy chọn). Mỗi accordion cách nhau bằng 1 dòng "#" mới.');
     fxt_home_field($wp_customize, 'fxt_home_about', 'fxt_home_about_disclaimer', 'Risk Disclaimer (dưới cùng)',
         '⚠️ Forex/CFD trading involves high risk. You may lose all of your invested capital.', 'textarea', 'Để trống = ẩn.');
 });

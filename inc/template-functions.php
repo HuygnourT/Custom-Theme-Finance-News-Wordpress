@@ -57,6 +57,79 @@ function fxt_default_hero_stats_text() {
 }
 
 /**
+ * Parse cấu trúc Accordion dạng text thành mảng item.
+ * # = Tiêu đề accordion | > = Nội dung | * Label|URL = nút CTA (tùy chọn)
+ */
+function fxt_parse_accordion_text($raw_text) {
+    $lines   = preg_split('/\r\n|\r|\n/', (string) $raw_text);
+    $items   = [];
+    $current = null;
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '') continue;
+
+        if ($line[0] === '#') {
+            if ($current !== null) $items[] = $current;
+            $current = [
+                'title'     => trim(ltrim($line, '# ')),
+                'content'   => '',
+                'cta_label' => '',
+                'cta_url'   => '',
+            ];
+        } elseif ($line[0] === '>') {
+            if ($current === null) continue;
+            $text = trim(ltrim($line, '> '));
+            $current['content'] = trim(trim($current['content'] . ' ' . $text));
+        } elseif ($line[0] === '*') {
+            if ($current === null) continue;
+            $cta_raw = trim(ltrim($line, '* '));
+            $parts   = array_map('trim', explode('|', $cta_raw, 2));
+            $current['cta_label'] = $parts[0] ?? '';
+            $current['cta_url']   = $parts[1] ?? '';
+        }
+    }
+
+    if ($current !== null) $items[] = $current;
+
+    return $items;
+}
+
+/**
+ * Render Accordion (dùng <details>/<summary> — không cần JS)
+ */
+function fxt_render_about_accordion($items) {
+    if (empty($items)) return;
+    echo '<div class="about-accordion">';
+    foreach ($items as $i => $item) {
+        if ($item['title'] === '') continue;
+        echo '<details class="accordion-item"' . ($i === 0 ? ' open' : '') . '>';
+        echo '<summary class="accordion-title">' . esc_html($item['title']) . '</summary>';
+        echo '<div class="accordion-body">';
+        if ($item['content'] !== '') {
+            echo '<p>' . esc_html($item['content']) . '</p>';
+        }
+        if (!empty($item['cta_label']) && !empty($item['cta_url'])) {
+            echo '<a href="' . esc_url($item['cta_url']) . '" class="accordion-cta">' . esc_html($item['cta_label']) . ' <span class="accordion-cta-arrow">→</span></a>';
+        }
+        echo '</div></details>';
+    }
+    echo '</div>';
+}
+
+/**
+ * Nội dung mặc định cho ô Accordion (Customizer textarea)
+ */
+function fxt_default_about_accordion_text() {
+    return "#Why Traders Trust Us\n"
+        . ">We review every broker firsthand — real accounts, real spreads, real withdrawal tests — before publishing any rating.\n"
+        . "* See Our Methodology|/about-us/\n"
+        . "#How We Choose Brokers\n"
+        . ">Regulation, trading costs, platform reliability, and customer support are scored using the same checklist for every broker.\n"
+        . "* View Broker Reviews|/broker-reviews/";
+}
+
+/**
  * Reading time - text từ Customizer
  */
 // Fix lại cho đọc được các custom field
