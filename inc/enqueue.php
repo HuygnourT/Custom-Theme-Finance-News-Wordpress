@@ -71,3 +71,8 @@ add_filter('script_loader_tag', function ($tag, $handle) {
     }
     return $tag;
 }, 10, 2);
+
+// === CUSTOM CSS (thay thế Additional CSS trong Customizer) — load sau cùng ===
+add_action('wp_enqueue_scripts', function () {
+    wp_enqueue_style('fxt-custom', FXT_URI . '/assets/css/custom.css', ['fxt-style'], FXT_VERSION);
+}, 250);
