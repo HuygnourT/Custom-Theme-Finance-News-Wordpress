@@ -78,7 +78,7 @@ get_header(); ?>
                 <div class="broker-rank">#<?php echo $rank++; ?></div>
                 <div class="broker-info">
                     <div class="broker-logo"><?php echo fxt_get_broker_icon_html(get_the_ID()); ?></div>
-                    <div><div class="broker-name"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></div><?php echo fxt_star_rating($meta['rating']); ?></div>
+                    <div><div class="broker-name"><a href="<?php the_permalink(); ?>"><?php echo esc_html(fxt_get_broker_name(get_the_ID())); ?></a></div><?php echo fxt_star_rating($meta['rating']); ?></div>
                 </div>
                 <div class="broker-specs">
                     <div class="broker-spec"><span class="spec-label"><?php echo $lbl_spread; ?></span><span class="spec-value"><?php echo esc_html($meta['spread'] ?: 'N/A'); ?></span></div>
@@ -185,7 +185,7 @@ get_header(); ?>
             <div class="guide-card">
                 <div class="guide-card-head">
                     <span class="guide-card-logo"><?php echo fxt_get_broker_icon_html($bid, 'fxt-card-small'); ?></span>
-                    <span class="guide-card-name"><a href="<?php echo esc_url(get_permalink($bid)); ?>"><?php echo esc_html(get_the_title($bid)); ?></a></span>
+                    <span class="guide-card-name"><a href="<?php echo esc_url(get_permalink($bid)); ?>"><?php echo esc_html(fxt_get_broker_name($bid)); ?></a></span>
                 </div>
 
                 <?php if (!empty($links)): ?>

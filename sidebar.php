@@ -9,7 +9,7 @@
         <div class="sidebar-broker-list">
         <?php $top = new WP_Query(['post_type'=>'broker','posts_per_page'=>5,'meta_key'=>'_fxt_rating','orderby'=>'meta_value_num','order'=>'DESC']);
         if($top->have_posts()): while($top->have_posts()): $top->the_post(); $r = get_post_meta(get_the_ID(),'_fxt_rating',true); ?>
-            <a href="<?php the_permalink(); ?>" class="sidebar-broker-item"><span><?php the_title(); ?></span><span class="sidebar-broker-rating"><?php echo esc_html($r); ?>/10</span></a>
+            <a href="<?php the_permalink(); ?>" class="sidebar-broker-item"><span><?php echo esc_html(fxt_get_broker_name(get_the_ID())); ?></span><span class="sidebar-broker-rating"><?php echo esc_html($r); ?>/10</span></a>
         <?php endwhile; wp_reset_postdata(); endif; ?>
         </div>
     </div>

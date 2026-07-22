@@ -14,7 +14,7 @@ $custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_autho
         <div class="broker-hero-info">
             <div class="broker-hero-logo"><?php echo fxt_get_broker_icon_html(get_the_ID()); ?></div>
             <div>
-                <h1 class="broker-hero-title"><?php echo esc_html($prefix); ?> <?php the_title(); ?> <?php echo date('Y'); ?></h1>
+                <h1 class="broker-hero-title"><?php the_title(); ?></h1>
                 <?php if(has_excerpt()): ?><p class="broker-hero-excerpt"><?php echo get_the_excerpt(); ?></p><?php endif; ?>
 
                 <?php // NEW: Post meta with custom author support ?>
@@ -39,7 +39,7 @@ $custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_autho
         <div class="broker-rating-box">
             <div class="rating-big"><span class="rating-number-big"><?php echo esc_html($meta['rating'] ?: '0'); ?></span><span class="rating-max">/10</span></div>
             <?php echo fxt_star_rating($meta['rating']); ?>
-            <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-block" target="_blank" rel="noopener nofollow"><?php echo esc_html($lbl_open); ?> <?php the_title(); ?></a>
+            <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-block" target="_blank" rel="noopener nofollow"><?php echo esc_html($lbl_open); ?> <?php echo esc_html(fxt_get_broker_name(get_the_ID())); ?></a>
         </div>
     </div>
 </div></div>
@@ -99,7 +99,7 @@ $custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_autho
         </div>
         <?php endif; ?>
 
-        <div class="inline-cta"><a href="<?php echo esc_url($aff); ?>" class="btn btn-primary btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html($lbl_open); ?> <?php the_title(); ?> →</a></div>
+        <div class="inline-cta"><a href="<?php echo esc_url($aff); ?>" class="btn btn-primary btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html($lbl_open); ?> <?php echo esc_html(fxt_get_broker_name(get_the_ID())); ?> →</a></div>
 
         <!-- Main editor content (Gutenberg mặc định) -->
         <div class="entry-content"><?php the_content(); ?></div>
@@ -107,7 +107,7 @@ $custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_autho
         <?php fxt_share_buttons(); ?>
 
         <div class="bottom-cta-box">
-            <h3><?php echo esc_html(str_replace('{name}', get_the_title(), get_theme_mod('fxt_broker_cta_ready', 'Are you ready to trade with {name}?'))); ?></h3>
+            <h3><?php echo esc_html(str_replace('{name}', fxt_get_broker_name(get_the_ID()), get_theme_mod('fxt_broker_cta_ready', 'Are you ready to trade with {name}?'))); ?></h3>
             <p><?php echo esc_html(get_theme_mod('fxt_broker_cta_desc', 'Open an account in just a few minutes and start trading today.')); ?></p>
             <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Get Started →')); ?></a>
         </div>

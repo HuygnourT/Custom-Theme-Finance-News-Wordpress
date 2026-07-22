@@ -57,6 +57,7 @@ function fxt_broker_meta_box_html($post) {
     wp_nonce_field('fxt_broker_meta', 'fxt_broker_meta_nonce');
 
     $fields = [
+        'short_name'     => get_post_meta($post->ID, '_fxt_broker_short_name', true),
         'rating'         => get_post_meta($post->ID, '_fxt_rating', true),
         'spread'         => get_post_meta($post->ID, '_fxt_spread', true),
         'leverage'       => get_post_meta($post->ID, '_fxt_leverage', true),
@@ -132,6 +133,14 @@ function fxt_broker_meta_box_html($post) {
         });
     })(jQuery);
     </script>
+
+    <div style="margin-bottom:16px;padding:14px;background:#fef8e8;border:1px solid #f0dca0;border-radius:6px;">
+        <label for="fxt_broker_short_name" style="display:block;font-weight:700;margin-bottom:6px;color:#1e3a5f;">🏷 Tên hiển thị ngắn (dùng cho nút CTA, Card, Sidebar...)</label>
+        <input type="text" id="fxt_broker_short_name" name="fxt_broker_short_name"
+               value="<?php echo esc_attr($fields['short_name']); ?>"
+               placeholder="VD: Exness" style="width:100%;padding:8px;border:1px solid #ccd0d4;border-radius:4px;">
+        <p class="fxt-meta-hint" style="margin-top:6px;">Để trống = tự động dùng Tiêu đề bài viết. Dùng field này khi Tiêu đề có thêm chữ SEO (VD: "Exness Review 2026") nhưng bạn chỉ muốn hiện "Exness" ở nút CTA / Card / Sidebar.</p>
+    </div>
 
     <div class="fxt-meta-grid">
         <div>
@@ -336,6 +345,7 @@ add_action('save_post_broker', function ($post_id) {
     if (!current_user_can('edit_post', $post_id)) return;
 
     $text_fields = [
+        'fxt_broker_short_name' => '_fxt_broker_short_name',
         'fxt_rating'      => '_fxt_rating',
         'fxt_spread'      => '_fxt_spread',
         'fxt_leverage'    => '_fxt_leverage',
@@ -386,6 +396,7 @@ add_action('save_post_broker', function ($post_id) {
  */
 function fxt_get_broker_meta($post_id) {
     return [
+        'short_name'     => get_post_meta($post_id, '_fxt_broker_short_name', true),
         'icon_id'        => get_post_meta($post_id, '_fxt_broker_icon', true),
         'rating'         => get_post_meta($post_id, '_fxt_rating', true),
         'spread'         => get_post_meta($post_id, '_fxt_spread', true),
@@ -399,6 +410,16 @@ function fxt_get_broker_meta($post_id) {
         'pros'           => array_filter(array_map('trim', explode("\n", get_post_meta($post_id, '_fxt_pros', true) ?: ''))),
         'cons'           => array_filter(array_map('trim', explode("\n", get_post_meta($post_id, '_fxt_cons', true) ?: ''))),
     ];
+}
+
+/**
+ * Helper: Lấy Tên hiển thị của Broker (dùng cho CTA/Card/Sidebar...)
+ * Ưu tiên: _fxt_broker_short_name → fallback Tiêu đề bài viết
+ */
+function fxt_get_broker_name($post_id = null) {
+    if (!$post_id) $post_id = get_the_ID();
+    $short_name = get_post_meta($post_id, '_fxt_broker_short_name', true);
+    return $short_name !== '' ? $short_name : get_the_title($post_id);
 }
 
 /**
