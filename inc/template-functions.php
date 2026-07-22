@@ -51,9 +51,7 @@ function fxt_parse_stat_list($raw_text) {
  * Nội dung mặc định cho ô Statistics (Customizer textarea)
  */
 function fxt_default_hero_stats_text() {
-    return "#Brokers Reviewed | 15+\n"
-        . "#Educational Articles | 200+\n"
-        . "#Monthly Readers | 50K+";
+    return "";
 }
 
 /**

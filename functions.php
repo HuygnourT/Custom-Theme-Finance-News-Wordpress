@@ -14,6 +14,7 @@ require_once FXT_DIR . '/inc/meta-boxes-sub-posts.php';    // NEW: CTA, Pros/Con
 require_once FXT_DIR . '/inc/mega-menu.php';               // NEW: Category bar / mega menu
 require_once FXT_DIR . '/inc/customizer.php';
 require_once FXT_DIR . '/inc/customizer-homepage.php';
+require_once FXT_DIR . '/inc/site-data-override.php';      // NEW: Data thật, độc lập với Customizer
 require_once FXT_DIR . '/inc/seo-helpers.php';
 require_once FXT_DIR . '/inc/template-functions.php';
 require_once FXT_DIR . '/inc/demo-import.php';
