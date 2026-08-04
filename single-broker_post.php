@@ -107,7 +107,7 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
                     <?php endif; ?>
                 </div>
                 <?php if ($aff && $aff !== '#'): ?>
-                <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-sm" target="_blank" rel="noopener nofollow">
+                <a href="<?php echo esc_url(fxt_get_broker_go_url($parent['ID'])); ?>" class="btn btn-cta btn-sm" target="_blank" rel="noopener nofollow sponsored">
                     <?php echo esc_html($lbl_open); ?> <?php echo esc_html($parent['title']); ?>
                 </a>
                 <?php endif; ?>
@@ -270,7 +270,7 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             <div class="bottom-cta-box">
                 <h3><?php echo esc_html(str_replace('{name}', $parent['title'], get_theme_mod('fxt_broker_cta_ready', 'Are you ready to trade with {name}?'))); ?></h3>
                 <p><?php echo esc_html(get_theme_mod('fxt_broker_cta_desc', 'Open an account in just a few minutes and start trading today.')); ?></p>
-                <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Get Started →')); ?></a>
+                <a href="<?php echo esc_url(fxt_get_broker_go_url($parent['ID'])); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow sponsored"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Get Started →')); ?></a>
             </div>
             <?php endif; ?>
 

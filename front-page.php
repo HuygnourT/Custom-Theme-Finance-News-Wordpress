@@ -89,7 +89,7 @@ get_header(); ?>
                 <div class="broker-actions">
                     <a href="<?php the_permalink(); ?>" class="btn btn-outline btn-sm"><?php echo $lbl_review; ?></a>
                     <?php $aff = $meta['affiliate_link'] ?: get_theme_mod('fxt_default_affiliate_link',''); if($aff): ?>
-                    <a href="<?php echo esc_url($aff); ?>" class="btn btn-primary btn-sm" target="_blank" rel="noopener nofollow"><?php echo $lbl_open; ?></a>
+                    <a href="<?php echo esc_url(fxt_get_broker_go_url(get_the_ID())); ?>" class="btn btn-primary btn-sm" target="_blank" rel="noopener nofollow sponsored"><?php echo $lbl_open; ?></a>
                     <?php endif; ?>
                 </div>
             </div>

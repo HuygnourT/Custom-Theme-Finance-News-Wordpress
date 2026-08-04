@@ -23,7 +23,7 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>
             <?php $cta_link = get_theme_mod('fxt_default_affiliate_link',''); $cta_text = get_theme_mod('fxt_cta_text','Open Account'); if($cta_link): ?>
-            <a href="<?php echo esc_url($cta_link); ?>" class="btn btn-cta btn-sm header-cta" target="_blank" rel="noopener nofollow"><?php echo esc_html($cta_text); ?></a>
+            <a href="<?php echo esc_url(fxt_get_default_go_url()); ?>" class="btn btn-cta btn-sm header-cta" target="_blank" rel="noopener nofollow sponsored"><?php echo esc_html($cta_text); ?></a>
             <?php endif; ?>
             <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Menu"><span class="hamburger"></span></button>
         </div>

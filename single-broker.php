@@ -39,7 +39,7 @@ $custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_autho
         <div class="broker-rating-box">
             <div class="rating-big"><span class="rating-number-big"><?php echo esc_html($meta['rating'] ?: '0'); ?></span><span class="rating-max">/10</span></div>
             <?php echo fxt_star_rating($meta['rating']); ?>
-            <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-block" target="_blank" rel="noopener nofollow"><?php echo esc_html($lbl_open); ?> <?php echo esc_html(fxt_get_broker_name(get_the_ID())); ?></a>
+            <a href="<?php echo esc_url(fxt_get_broker_go_url(get_the_ID())); ?>" class="btn btn-cta btn-block" target="_blank" rel="noopener nofollow sponsored"><?php echo esc_html($lbl_open); ?> <?php echo esc_html(fxt_get_broker_name(get_the_ID())); ?></a>
         </div>
     </div>
 </div></div>
@@ -65,7 +65,7 @@ $custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_autho
                     <tr><th><?php echo $icon; ?> <?php echo esc_html(get_theme_mod($mod_key, $default)); ?></th><td><?php echo esc_html($meta[$key]); ?></td></tr>
                 <?php endif; endforeach;
                 if ($meta['website_url']): ?>
-                    <tr><th>🌐 <?php echo esc_html(get_theme_mod('fxt_label_website', 'Website')); ?></th><td><a href="<?php echo esc_url($meta['website_url']); ?>" target="_blank" rel="noopener nofollow"><?php echo esc_html($meta['website_url']); ?></a></td></tr>
+                    <tr><th>🌐 <?php echo esc_html(get_theme_mod('fxt_label_website', 'Website')); ?></th><td><a href="<?php echo esc_url(fxt_get_broker_go_url(get_the_ID())); ?>" target="_blank" rel="noopener nofollow sponsored"><?php echo esc_html($meta['website_url']); ?></a></td></tr>
                 <?php endif; ?>
             </table>
         </div>
@@ -99,7 +99,7 @@ $custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_autho
         </div>
         <?php endif; ?>
 
-        <div class="inline-cta"><a href="<?php echo esc_url($aff); ?>" class="btn btn-primary btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html($lbl_open); ?> <?php echo esc_html(fxt_get_broker_name(get_the_ID())); ?> →</a></div>
+        <div class="inline-cta"><a href="<?php echo esc_url(fxt_get_broker_go_url(get_the_ID())); ?>" class="btn btn-primary btn-lg" target="_blank" rel="noopener nofollow sponsored"><?php echo esc_html($lbl_open); ?> <?php echo esc_html(fxt_get_broker_name(get_the_ID())); ?> →</a></div>
 
         <!-- Main editor content (Gutenberg mặc định) -->
         <div class="entry-content"><?php the_content(); ?></div>
@@ -109,7 +109,7 @@ $custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_autho
         <div class="bottom-cta-box">
             <h3><?php echo esc_html(str_replace('{name}', fxt_get_broker_name(get_the_ID()), get_theme_mod('fxt_broker_cta_ready', 'Are you ready to trade with {name}?'))); ?></h3>
             <p><?php echo esc_html(get_theme_mod('fxt_broker_cta_desc', 'Open an account in just a few minutes and start trading today.')); ?></p>
-            <a href="<?php echo esc_url($aff); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Get Started →')); ?></a>
+            <a href="<?php echo esc_url(fxt_get_broker_go_url(get_the_ID())); ?>" class="btn btn-cta btn-lg" target="_blank" rel="noopener nofollow sponsored"><?php echo esc_html(get_theme_mod('fxt_broker_cta_btn', 'Get Started →')); ?></a>
         </div>
 
         <!-- ═══ NEW: AUTHOR BOX — Custom author hoặc WP default ═══ -->
