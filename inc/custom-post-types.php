@@ -142,6 +142,51 @@ add_action('init', function () {
 });
 
 /**
+ * Fix: Slug của broker_post chỉ cần DUY NHẤT trong phạm vi CÙNG 1 Broker cha,
+ * không cần duy nhất trên toàn site. Mặc định WordPress kiểm tra trùng slug
+ * trên TOÀN BỘ post type broker_post — nên 2 bài "withdraw" ở 2 broker khác
+ * nhau (Exness, Vantage) vẫn bị tự thêm hậu tố "-2" dù URL cuối cùng là khác
+ * nhau (/broker-reviews/exness/withdraw/ vs /broker-reviews/vantage/withdraw/).
+ */
+add_filter('wp_unique_post_slug', function ($slug, $post_id, $post_status, $post_type, $post_parent, $original_slug) {
+    if ($post_type !== 'broker_post' || empty($original_slug)) {
+        return $slug;
+    }
+
+    // Ưu tiên lấy Broker cha từ dữ liệu VỪA submit trong form (vì lúc WordPress
+    // tính slug, meta box "_fxt_parent_broker" CHƯA kịp lưu vào DB) — fallback
+    // về giá trị đã lưu trước đó cho các trường hợp tính lại slug khác.
+    if (isset($_POST['fxt_parent_broker'])) {
+        $parent_broker_id = intval($_POST['fxt_parent_broker']);
+    } else {
+        $parent_broker_id = (int) get_post_meta($post_id, '_fxt_parent_broker', true);
+    }
+
+    if ($parent_broker_id <= 0) {
+        return $slug; // Chưa chọn Broker cha — giữ hành vi mặc định
+    }
+
+    global $wpdb;
+
+    $conflict = $wpdb->get_var($wpdb->prepare(
+        "SELECT p.ID FROM {$wpdb->posts} p
+         INNER JOIN {$wpdb->postmeta} pm
+             ON p.ID = pm.post_id AND pm.meta_key = '_fxt_parent_broker'
+         WHERE p.post_name = %s
+           AND p.post_type = %s
+           AND p.ID != %d
+           AND pm.meta_value = %d
+           AND p.post_status NOT IN ('trash', 'auto-draft')
+         LIMIT 1",
+        $original_slug, $post_type, $post_id, $parent_broker_id
+    ));
+
+    // Không có bài nào khác trùng slug trong CÙNG Broker cha -> dùng slug gốc,
+    // bỏ hậu tố "-2"/"-3" mà WordPress core đã tự thêm.
+    return $conflict ? $slug : $original_slug;
+}, 10, 6);
+
+/**
  * Custom Rewrite Rules cho Broker Sub-Posts
  * URL: /broker-reviews/exness/huong-dan-nap-tien/
  */

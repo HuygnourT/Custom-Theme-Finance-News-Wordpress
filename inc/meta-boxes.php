@@ -432,7 +432,7 @@ function fxt_get_broker_icon_html($post_id = null, $size = 'fxt-broker-logo') {
     $icon_id = get_post_meta($post_id, '_fxt_broker_icon', true);
     if ($icon_id) {
         return wp_get_attachment_image($icon_id, $size, false, [
-            'alt'     => esc_attr(get_the_title($post_id)),
+            'alt'     => esc_attr(fxt_get_broker_name($post_id)),
             'loading' => 'lazy',
         ]);
     }
@@ -442,7 +442,7 @@ function fxt_get_broker_icon_html($post_id = null, $size = 'fxt-broker-logo') {
     }
 
     return '<span style="font-size:1.5rem;font-weight:800;color:var(--c-primary)">'
-        . esc_html(mb_substr(get_the_title($post_id), 0, 2))
+        . esc_html(mb_substr(fxt_get_broker_name($post_id), 0, 2))
         . '</span>';
 }
 
@@ -459,7 +459,7 @@ function fxt_get_parent_broker($broker_post_id = null) {
 
     return [
         'ID'             => $parent->ID,
-        'title'          => $parent->post_title,
+        'title'          => fxt_get_broker_name($parent->ID),
         'permalink'      => get_permalink($parent->ID),
         'meta'           => fxt_get_broker_meta($parent->ID),
         'affiliate_link' => get_post_meta($parent->ID, '_fxt_affiliate_link', true) ?: get_theme_mod('fxt_default_affiliate_link', ''),
