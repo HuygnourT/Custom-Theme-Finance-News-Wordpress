@@ -488,19 +488,19 @@ function fxt_get_broker_sub_posts($broker_id, $exclude = 0) {
 // ║  CUSTOM AUTHOR META BOX — broker + broker_post + generic_post    ║
 // ╚═══════════════════════════════════════════════════════════════════╝
 
-add_action('add_meta_boxes', function () {
-    $author_post_types = ['broker', 'broker_post', 'generic_post'];
-    foreach ($author_post_types as $pt) {
-        add_meta_box(
-            'fxt_custom_author_' . $pt,
-            '✏️ Custom Author (Tác giả hiển thị)',
-            'fxt_broker_post_author_html',
-            $pt,
-            'side',
-            'default'
-        );
-    }
-});
+// add_action('add_meta_boxes', function () {
+//     $author_post_types = ['generic_post'];
+//     foreach ($author_post_types as $pt) {
+//         add_meta_box(
+//             'fxt_custom_author_' . $pt,
+//             '✏️ Custom Author (Tác giả hiển thị)',
+//             'fxt_broker_post_author_html',
+//             $pt,
+//             'side',
+//             'default'
+//         );
+//     }
+// });
 
 function fxt_broker_post_author_html($post) {
     wp_nonce_field('fxt_custom_author_meta', 'fxt_custom_author_nonce');
@@ -593,8 +593,6 @@ function fxt_save_custom_author_meta($post_id) {
     }
 }
 
-add_action('save_post_broker', 'fxt_save_custom_author_meta');
-add_action('save_post_broker_post', 'fxt_save_custom_author_meta');
 add_action('save_post_generic_post', 'fxt_save_custom_author_meta');
 
 

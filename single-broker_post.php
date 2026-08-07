@@ -40,8 +40,8 @@ if (!is_array($post_sections)) $post_sections = [];
 $intro_text = get_post_meta(get_the_ID(), '_fxt_sub_intro_text', true);
 $outro_text = get_post_meta(get_the_ID(), '_fxt_sub_outro_text', true);
 
-// NEW: Custom author
-$custom_author = function_exists('fxt_get_custom_author') ? fxt_get_custom_author(get_the_ID()) : null;
+// NEW: Đa tác giả (hồ sơ tập trung)
+$post_authors = fxt_get_post_authors(get_the_ID());
 
 $default_show = get_theme_mod('fxt_broker_section_show', '▼ Show details');
 $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
@@ -55,8 +55,8 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             <?php fxt_broker_post_breadcrumbs(); ?>
             <h1 class="single-title"><?php the_title(); ?></h1>
             <?php
-            // Custom post meta: dùng custom author name nếu có
-            if ($custom_author): ?>
+            // Post meta: hiện tác giả (hỗ trợ nhiều tác giả)
+            if (!empty($post_authors)): ?>
             <div class="post-meta">
                 <?php $categories = get_the_category(); if ($categories): ?>
                 <a href="<?php echo esc_url(get_category_link($categories[0]->term_id)); ?>" class="post-cat-link"><?php echo esc_html($categories[0]->name); ?></a>
@@ -67,7 +67,7 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
                 </span>
                 <span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    <?php echo esc_html($custom_author['name']); ?>
+                    <?php fxt_render_author_byline(get_the_ID()); ?>
                 </span>
                 <span>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -274,39 +274,8 @@ $default_hide = get_theme_mod('fxt_broker_section_hide', '▲ Hide details');
             </div>
             <?php endif; ?>
 
-            <!-- ═══ AUTHOR BOX: Custom author hoặc WP default ═══ -->
-            <?php if ($custom_author): ?>
-            <div class="author-box">
-                <div class="author-avatar">
-                    <?php if (!empty($custom_author['avatar'])): ?>
-                        <img src="<?php echo esc_url($custom_author['avatar']); ?>" alt="<?php echo esc_attr($custom_author['name']); ?>" width="64" height="64" style="border-radius:50%">
-                    <?php else: ?>
-                        <?php echo get_avatar(get_the_author_meta('ID'), 64); ?>
-                    <?php endif; ?>
-                </div>
-                <div class="author-info">
-                    <h4 class="author-name"><?php echo esc_html($custom_author['name']); ?></h4>
-                    <?php if (!empty($custom_author['title'])): ?>
-                    <p class="author-title" style="font-size:.8rem;color:var(--c-primary);font-weight:600;margin-bottom:4px;"><?php echo esc_html($custom_author['title']); ?></p>
-                    <?php endif; ?>
-                    <p class="author-bio"><?php
-                        if (!empty($custom_author['bio'])) {
-                            echo esc_html($custom_author['bio']);
-                        } else {
-                            echo get_the_author_meta('description');
-                        }
-                    ?></p>
-                </div>
-            </div>
-            <?php else: ?>
-            <div class="author-box">
-                <div class="author-avatar"><?php echo get_avatar(get_the_author_meta('ID'), 64); ?></div>
-                <div class="author-info">
-                    <h4 class="author-name"><?php the_author(); ?></h4>
-                    <p class="author-bio"><?php echo get_the_author_meta('description'); ?></p>
-                </div>
-            </div>
-            <?php endif; ?>
+            <!-- ═══ AUTHOR BOX — hỗ trợ nhiều tác giả ═══ -->
+            <?php fxt_render_author_box(get_the_ID()); ?>
 
         </div>
 

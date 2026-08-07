@@ -9,6 +9,7 @@ require_once FXT_DIR . '/inc/enqueue.php';
 require_once FXT_DIR . '/inc/performance.php';
 require_once FXT_DIR . '/inc/custom-post-types.php';
 require_once FXT_DIR . '/inc/generic-post-types.php';     // NEW: Generic sub-posts CPT
+require_once FXT_DIR . '/inc/author-cpt.php';               // NEW: Author CPT — đa tác giả cho Broker/Broker Post
 require_once FXT_DIR . '/inc/meta-boxes.php';
 require_once FXT_DIR . '/inc/meta-boxes-sub-posts.php';    // NEW: CTA, Pros/Cons, Sections cho sub-posts
 require_once FXT_DIR . '/inc/mega-menu.php';               // NEW: Category bar / mega menu

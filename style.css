@@ -3,7 +3,7 @@ Theme Name: FX Trading Today
 Theme URI: https://fxtradingtoday.com
 Author: Timo
 Description: Custom WordPress theme cho forex affiliate blog.
-Version: 2.0.7
+Version: 2.0.8
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 8.0
@@ -371,10 +371,39 @@ table{border-collapse:collapse;border-spacing:0}
 .share-btn:hover{transform:scale(1.1);color:#fff}
 .share-fb{background:#1877f2}.share-tw{background:#1da1f2}.share-tg{background:#0088cc}
 /* Author */
-.author-box{display:flex;gap:16px;padding:24px;background:var(--c-bg-alt);border-radius:var(--r-md);margin:40px 0}
-.author-avatar img{border-radius:50%;width:64px;height:64px}
+.author-box-group{display:flex;flex-direction:column;gap:16px;margin:40px 0}
+.author-box{display:flex;gap:16px;padding:24px;background:var(--c-bg-alt);border-radius:var(--r-md);margin:0}
+.author-avatar img{border-radius:50%;width:64px;height:64px;object-fit:cover}
+.author-avatar{flex-shrink:0}
+.author-initial{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:var(--c-primary);color:#fff;font-size:1.4rem;font-weight:800}
 .author-name{font-size:1rem;margin-bottom:4px}
+.author-name a{color:inherit}
 .author-bio{font-size:.875rem;color:var(--c-text-2);line-height:1.6}
+
+/* Authors — Archive grid */
+.author-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:24px;margin:32px 0}
+.author-card{display:flex;flex-direction:column;align-items:center;text-align:center;padding:28px 20px;background:var(--c-bg-alt);border-radius:var(--r-md);border:1px solid var(--c-border-light);transition:transform .2s ease,box-shadow .2s ease}
+.author-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.author-card-avatar{display:block;margin-bottom:14px}
+.author-card-avatar img{border-radius:50%;width:88px;height:88px;object-fit:cover}
+.author-card .author-initial{width:88px;height:88px;font-size:1.8rem}
+.author-card-name{font-size:1rem;color:var(--c-text);margin-bottom:2px}
+.author-card-title{font-size:.8rem;color:var(--c-primary);font-weight:600;margin-bottom:8px}
+.author-card-desc{font-size:.82rem;color:var(--c-text-2);line-height:1.6}
+
+/* Author — Single profile page */
+.author-profile-header{display:flex;align-items:center;gap:20px;margin:32px 0 24px}
+.author-profile-avatar img{border-radius:50%;width:120px;height:120px;object-fit:cover}
+.author-profile-avatar .author-initial{width:120px;height:120px;font-size:2.2rem}
+.author-profile-name{font-size:1.6rem;margin-bottom:4px}
+.author-profile-title{font-size:.95rem;color:var(--c-primary);font-weight:600}
+.author-profile-bio{margin-bottom:40px}
+.author-profile-section-title{font-size:1.2rem;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--c-border)}
+.author-articles-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:40px}
+.author-article-card{display:block;padding:14px;background:var(--c-bg-alt);border-radius:var(--r-md);text-align:center}
+.author-article-image{display:block;margin-bottom:10px}
+.author-article-image img{border-radius:var(--r-md);width:100%;height:90px;object-fit:cover}
+.author-article-title{font-size:.85rem;color:var(--c-text);font-weight:600}
 /* Related */
 .related-posts{margin-top:64px;padding-top:40px;border-top:1px solid var(--c-border)}
 .related-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
