@@ -70,13 +70,7 @@ add_action('init', function () {
     ]);
 });
 
-/**
- * Tắt Gutenberg cho generic_post
- */
-add_filter('use_block_editor_for_post_type', function ($use, $post_type) {
-    if ($post_type === 'generic_post') return false;
-    return $use;
-}, 10, 2);
+// Gutenberg mặc định đã được bật cho generic_post (giống broker_post hiện tại)
 
 // ╔═══════════════════════════════════════════════════════════════╗
 // ║  META BOX: Parent Post selector                               ║
