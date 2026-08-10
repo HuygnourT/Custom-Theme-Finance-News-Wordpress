@@ -8,7 +8,7 @@ get_header();
 if (have_posts()): the_post();
     $author_id  = get_the_ID();
     $job_title  = get_post_meta($author_id, '_fxt_author_job_title', true);
-    $avatar     = get_the_post_thumbnail_url($author_id, 'medium');
+    $avatar     = fxt_get_author_avatar_url($author_id, 'medium');
 
     // Tìm mọi Broker + Broker Post có gắn tác giả này
     $authored = get_posts([

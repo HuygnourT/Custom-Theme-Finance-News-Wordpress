@@ -22,7 +22,7 @@ get_header();
         <?php while (have_posts()): the_post();
             $job_title  = get_post_meta(get_the_ID(), '_fxt_author_job_title', true);
             $short_desc = get_post_meta(get_the_ID(), '_fxt_author_short_desc', true);
-            $avatar     = get_the_post_thumbnail_url(get_the_ID(), 'medium');
+            $avatar     = fxt_get_author_avatar_url(get_the_ID(), 'medium');
         ?>
         <a href="<?php the_permalink(); ?>" class="author-card">
             <span class="author-card-avatar">

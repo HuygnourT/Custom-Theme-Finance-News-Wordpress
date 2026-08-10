@@ -45,10 +45,19 @@ add_action('init', function () {
  */
 add_action('edit_form_after_title', function ($post) {
     if ($post->post_type !== 'fxt_author') return;
-    echo '<p style="color:#888;font-style:italic;margin:8px 0 0;">📝 Nội dung bên dưới = Bio đầy đủ (hiện ở trang riêng của tác giả). Đặt Ảnh đại diện (Featured Image) ở cột bên phải = Avatar.</p>';
+    echo '<p style="color:#888;font-style:italic;margin:8px 0 0;">📝 Nội dung bên dưới = Bio đầy đủ (hiện ở trang riêng của tác giả). Avatar: dùng ô "Chọn ảnh" trong khung 📋 Thông tin bổ sung bên dưới — nếu để trống sẽ tự dùng Featured Image ở cột bên phải.</p>';
 });
 
-// ── Meta box: Chức danh + Mô tả ngắn ──
+// ── Enqueue WordPress media uploader cho Avatar upload ──
+add_action('admin_enqueue_scripts', function ($hook) {
+    if (!in_array($hook, ['post.php', 'post-new.php'])) return;
+    $screen = get_current_screen();
+    if ($screen && $screen->post_type === 'fxt_author') {
+        wp_enqueue_media();
+    }
+});
+
+// ── Meta box: Chức danh + Mô tả ngắn + Avatar riêng ──
 add_action('add_meta_boxes', function () {
     add_meta_box('fxt_author_details', '📋 Thông tin bổ sung', 'fxt_author_details_html', 'fxt_author', 'normal', 'high');
 });
@@ -57,7 +66,54 @@ function fxt_author_details_html($post) {
     wp_nonce_field('fxt_author_details_meta', 'fxt_author_details_nonce');
     $job_title  = get_post_meta($post->ID, '_fxt_author_job_title', true);
     $short_desc = get_post_meta($post->ID, '_fxt_author_short_desc', true);
+    $avatar_id  = get_post_meta($post->ID, '_fxt_author_avatar', true);
+    $avatar_url = $avatar_id ? wp_get_attachment_image_url($avatar_id, 'thumbnail') : '';
     ?>
+    <div style="margin-bottom:16px;padding:14px;background:#f0f6fc;border:1px solid #c3daf5;border-radius:6px;">
+        <label style="display:block;font-weight:700;margin-bottom:10px;color:#1e3a5f;">🖼 Avatar (tùy chọn — tách biệt với Featured Image)</label>
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div id="fxt-author-avatar-preview-wrap" style="width:72px;height:72px;border:2px solid #ccd0d4;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#fff;flex-shrink:0;">
+                <img id="fxt-author-avatar-preview-img" src="<?php echo esc_url($avatar_url); ?>" alt="" style="max-width:100%;max-height:100%;<?php echo $avatar_url ? '' : 'display:none;'; ?>">
+                <span id="fxt-author-avatar-placeholder" style="font-size:24px;<?php echo $avatar_url ? 'display:none;' : ''; ?>">🖼</span>
+            </div>
+            <div>
+                <input type="hidden" id="fxt_author_avatar" name="fxt_author_avatar" value="<?php echo esc_attr($avatar_id); ?>">
+                <button type="button" class="button button-secondary" id="fxt-upload-author-avatar-btn">📤 Chọn ảnh</button>
+                <button type="button" class="button" id="fxt-remove-author-avatar-btn" style="margin-left:6px;color:#d63638;<?php echo $avatar_id ? '' : 'display:none;'; ?>">✕ Xóa ảnh</button>
+                <p style="margin:8px 0 0;font-size:12px;color:#666;font-style:italic;">Ảnh vuông (khuyến nghị 200×200px). Để trống → tự dùng Featured Image; nếu cũng không có → hiện chữ cái đầu tên.</p>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function($) {
+        var mediaFrame;
+        $('#fxt-upload-author-avatar-btn').on('click', function(e) {
+            e.preventDefault();
+            if (mediaFrame) { mediaFrame.open(); return; }
+            mediaFrame = wp.media({
+                title: 'Chọn Avatar Tác giả',
+                button: { text: 'Dùng ảnh này làm Avatar' },
+                multiple: false,
+                library: { type: 'image' }
+            });
+            mediaFrame.on('select', function() {
+                var attachment = mediaFrame.state().get('selection').first().toJSON();
+                $('#fxt_author_avatar').val(attachment.id);
+                var url = (attachment.sizes && attachment.sizes.thumbnail) ? attachment.sizes.thumbnail.url : attachment.url;
+                $('#fxt-author-avatar-preview-img').attr('src', url).show();
+                $('#fxt-author-avatar-placeholder').hide();
+                $('#fxt-remove-author-avatar-btn').show();
+            });
+            mediaFrame.open();
+        });
+        $('#fxt-remove-author-avatar-btn').on('click', function() {
+            $('#fxt_author_avatar').val('');
+            $('#fxt-author-avatar-preview-img').attr('src', '').hide();
+            $('#fxt-author-avatar-placeholder').show();
+            $(this).hide();
+        });
+    })(jQuery);
+    </script>
     <p>
         <label for="fxt_author_job_title" style="display:block;font-weight:600;margin-bottom:4px;">Chức danh</label>
         <input type="text" id="fxt_author_job_title" name="fxt_author_job_title" class="widefat"
@@ -81,6 +137,14 @@ add_action('save_post_fxt_author', function ($post_id) {
     }
     if (isset($_POST['fxt_author_short_desc'])) {
         update_post_meta($post_id, '_fxt_author_short_desc', sanitize_textarea_field($_POST['fxt_author_short_desc']));
+    }
+    if (isset($_POST['fxt_author_avatar'])) {
+        $avatar_id = intval($_POST['fxt_author_avatar']);
+        if ($avatar_id > 0) {
+            update_post_meta($post_id, '_fxt_author_avatar', $avatar_id);
+        } else {
+            delete_post_meta($post_id, '_fxt_author_avatar');
+        }
     }
 });
 
@@ -159,24 +223,42 @@ function fxt_get_post_authors($post_id = null) {
             'url'        => get_permalink($a->ID),
             'job_title'  => get_post_meta($a->ID, '_fxt_author_job_title', true),
             'short_desc' => get_post_meta($a->ID, '_fxt_author_short_desc', true),
-            'avatar'     => get_the_post_thumbnail_url($a->ID, 'thumbnail'),
+            'avatar'     => fxt_get_author_avatar_url($a->ID),
         ];
     }
     return $authors;
 }
 
 /**
- * Render: Dòng byline ngắn gọn ("Bởi A, B") — dùng trong post-meta trên đầu bài
+ * Helper: Lấy URL avatar của Tác giả — ưu tiên Avatar riêng (upload trong
+ * meta box) → fallback Featured Image → rỗng (template sẽ hiện chữ cái đầu)
+ */
+function fxt_get_author_avatar_url($author_id, $size = 'thumbnail') {
+    $avatar_id = get_post_meta($author_id, '_fxt_author_avatar', true);
+    if ($avatar_id) {
+        $url = wp_get_attachment_image_url($avatar_id, $size);
+        if ($url) return $url;
+    }
+    return get_the_post_thumbnail_url($author_id, $size) ?: '';
+}
+
+/**
+ * Render: Dòng byline ngắn gọn ("Tên — Chức danh, Tên 2 — Chức danh 2")
+ * dùng trong post-meta trên đầu bài
  */
 function fxt_render_author_byline($post_id = null) {
     $authors = fxt_get_post_authors($post_id);
     if (empty($authors)) return;
 
-    $links = array_map(function ($a) {
-        return '<a href="' . esc_url($a['url']) . '">' . esc_html($a['name']) . '</a>';
+    $parts = array_map(function ($a) {
+        $html = '<a href="' . esc_url($a['url']) . '">' . esc_html($a['name']) . '</a>';
+        if (!empty($a['job_title'])) {
+            $html .= '<em style="opacity:.7"> — ' . esc_html($a['job_title']) . '</em>';
+        }
+        return $html;
     }, $authors);
 
-    echo implode(', ', $links);
+    echo implode(', ', $parts);
 }
 
 /**
