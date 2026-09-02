@@ -40,11 +40,17 @@ add_filter('query_vars', function ($vars) {
 /**
  * Tự flush rewrite rules đúng 1 lần sau khi thêm rule mới, để bạn
  * không cần vào Settings → Permalinks → Save Changes bằng tay.
+ *
+ * LƯU Ý: dùng 1 chuỗi version RIÊNG (không dùng chung FXT_VERSION) —
+ * vì FXT_VERSION không tự đổi mỗi khi sửa rewrite rule trong file này,
+ * nên nếu dùng chung sẽ có lúc rule mới không được flush lại. Mỗi khi
+ * sửa rewrite rule ở file này, tăng số ở cuối chuỗi bên dưới lên 1.
  */
 add_action('init', function () {
-    if (get_option('fxt_go_rewrite_flushed') !== FXT_VERSION) {
+    $rules_version = 'fxt-go-rules-v2'; // v2 = thêm rule biến thể /go/{slug}/{variant}/
+    if (get_option('fxt_go_rewrite_flushed') !== $rules_version) {
         flush_rewrite_rules();
-        update_option('fxt_go_rewrite_flushed', FXT_VERSION);
+        update_option('fxt_go_rewrite_flushed', $rules_version);
     }
 }, 999);
 
