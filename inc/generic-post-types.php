@@ -54,13 +54,13 @@ add_action('init', function () {
     // Taxonomy: Topic (chủ đề cho generic_post)
     register_taxonomy('sub_post_topic', 'generic_post', [
         'labels' => [
-            'name'          => 'Chủ đề',
-            'singular_name' => 'Chủ đề',
-            'search_items'  => 'Tìm chủ đề',
-            'all_items'     => 'Tất cả chủ đề',
-            'edit_item'     => 'Sửa chủ đề',
-            'add_new_item'  => 'Thêm chủ đề',
-            'menu_name'     => 'Chủ đề',
+            'name'          => 'Topic',
+            'singular_name' => 'Topic',
+            'search_items'  => 'Search Topic',
+            'all_items'     => 'All Topic',
+            'edit_item'     => 'Edit Topic',
+            'add_new_item'  => 'Add Topic',
+            'menu_name'     => 'Topic',
         ],
         'hierarchical'      => true,
         'public'            => true,

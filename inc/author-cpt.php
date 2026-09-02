@@ -6,12 +6,9 @@ if (!defined('ABSPATH')) exit;
  *  AUTHOR CPT — Hồ sơ tác giả tập trung (1 nguồn) + Đa tác giả/bài
  * ═══════════════════════════════════════════════════════════════
  * Thay thế hệ thống "Custom Author" cũ (1 tác giả nhập trực tiếp
- * từng bài) áp dụng cho Broker + Broker Post. Giờ tác giả là 1 hồ sơ
- * riêng (CPT fxt_author) — sửa 1 lần, dùng lại ở mọi bài họ đứng tên.
- *
- * Lưu ý: Generic Post (bài viết dạng silo khác) VẪN áp dụng hệ thống
- * Custom Author cũ (không đổi) — chỉ Broker + Broker Post đổi sang hệ
- * thống mới này.
+ * từng bài) áp dụng cho Broker + Broker Post + Sub Post (generic_post).
+ * Giờ tác giả là 1 hồ sơ riêng (CPT fxt_author) — sửa 1 lần, dùng lại
+ * ở mọi bài họ đứng tên.
  */
 
 // ── Đăng ký CPT: Author ──
@@ -148,9 +145,9 @@ add_action('save_post_fxt_author', function ($post_id) {
     }
 });
 
-// ── Meta box: Chọn (nhiều) Tác giả cho Broker / Broker Post ──
+// ── Meta box: Chọn (nhiều) Tác giả cho Broker / Broker Post / Sub Post ──
 add_action('add_meta_boxes', function () {
-    foreach (['broker', 'broker_post'] as $pt) {
+    foreach (['broker', 'broker_post', 'generic_post'] as $pt) {
         add_meta_box('fxt_post_authors', '👥 Tác giả bài viết (chọn 1 hoặc nhiều)', 'fxt_post_authors_meta_box_html', $pt, 'side', 'high');
     }
 });
@@ -186,7 +183,7 @@ function fxt_post_authors_meta_box_html($post) {
     echo '<p style="font-size:11px;color:#888;margin-top:8px;"><a href="' . esc_url(admin_url('edit.php?post_type=fxt_author')) . '" target="_blank">Quản lý danh sách Tác giả →</a></p>';
 }
 
-foreach (['save_post_broker', 'save_post_broker_post'] as $hook) {
+foreach (['save_post_broker', 'save_post_broker_post', 'save_post_generic_post'] as $hook) {
     add_action($hook, function ($post_id) {
         if (!isset($_POST['fxt_post_authors_nonce']) || !wp_verify_nonce($_POST['fxt_post_authors_nonce'], 'fxt_post_authors_meta')) return;
         if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) return;

@@ -1,9 +1,11 @@
 <div class="sidebar-sticky">
 <?php if (is_active_sidebar('main-sidebar')): dynamic_sidebar('main-sidebar'); else: ?>
+    <?php if (!is_singular('generic_post')): ?>
     <div class="sidebar-widget">
         <h3 class="widget-title"><?php echo esc_html(get_theme_mod('fxt_sidebar_search', '🔍 Search')); ?></h3>
         <?php get_search_form(); ?>
     </div>
+    <?php endif; ?>
     <div class="sidebar-widget">
         <h3 class="widget-title"><?php echo esc_html(get_theme_mod('fxt_sidebar_brokers', '🏆 Top Broker')); ?></h3>
         <div class="sidebar-broker-list">
